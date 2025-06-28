@@ -1,0 +1,7 @@
+code/.ipynb_checkpoints/*
+code/__pycache__/*
+*.fits
+*.png
+*.parq
+*.csv
+*.ipynb_checkpoints/*
