@@ -51,6 +51,7 @@ code_path = "/astro/users/esb30/software/spreading_seas/code"
 sys.path.append(code_path)
 from delve_dr3_map_partitions_search import get_filter_splines, filter_data
 from aau_mu_gradient import filter_with_mu_gradient
+from cmd_plots import plot_cmd_hist, plot_cmd_scatter, plot_hess
 client = Client(n_workers=4, memory_limit="auto")
 print('Created Client')
 #Get the right columns: Want all the magnitude bands and don't forget PM errors when you crossmatch it with GAIA!!
