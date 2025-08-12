@@ -1,3 +1,6 @@
+import matplotlib.pyplot as plt
+import numpy as np
+fig,ax=plt.subplots(1,1,figsize=[6,6])
 def plot_cmd_hist(g,r,ax=ax,sqrt_bin_count=100, cmap='inferno', title='CMD',bright_bound=16,faint_bound=24.5,lower_color=0,higher_color=1):
 
     bins_x = np.linspace(lower_color, higher_color, sqrt_bin_count)
@@ -55,3 +58,4 @@ def plot_hess(g_on,r_on,g_off,r_off,ax=ax,sqrt_bin_count=100, cmap='inferno', ti
     ax.set_xlabel('g-r', fontsize=12)
     ax.set_ylabel('g', fontsize=12)
     ax.set_title(title, fontsize=14)
+plt.close()
