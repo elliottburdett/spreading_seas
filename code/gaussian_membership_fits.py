@@ -146,7 +146,7 @@ pmdec_params = {'c1': -0.982, 'c2': -0.089, 'c3': 0.025}
 lsigpmdec = -1.510
 sigma_pmdec = (10 ** lsigpmdec) * sigma_scale_factor
 
-def pmdec_gaussian(pmdec, phi1, pmdec_error=None):
+def pmdec_gaussian(pmdec, phi1, pmdec_error=None, widen=None):
     """
     Evaluate the Gaussian PDF for pmdec at given phi1 values, optionally incorporating per-star pmdec error.
     
@@ -155,6 +155,8 @@ def pmdec_gaussian(pmdec, phi1, pmdec_error=None):
     - phi1 : float or np.ndarray (same shape)
     - pmdec_error : float or np.ndarray (same shape), optional
         Observational errors on pmdec. If None, only intrinsic scatter is used.
+    - widen : float or None
+        If float, specifies the phi1 value where sigma begins to widen, reaching 2x sigma at phi1=30.
     
     Returns:
     - Gaussian PDF values
@@ -164,14 +166,24 @@ def pmdec_gaussian(pmdec, phi1, pmdec_error=None):
     if pmdec_error is None:
         total_sigma = sigma_pmdec
     else:
-        pmdec_error = np.asarray(pmdec_error) #verify it's an array
+        pmdec_error = np.asarray(pmdec_error)
         safe_error = np.where(
             np.isfinite(pmdec_error) & np.isreal(pmdec_error),
             pmdec_error,
             0.0
         )
-
         total_sigma = np.sqrt(sigma_pmdec**2 + safe_error**2)
+
+    if widen is not None:
+        phi1 = np.asarray(phi1)
+        scale_factor = np.ones_like(phi1)
+
+        mask = phi1 > widen
+        scale = (phi1[mask] - widen) / (30.0 - widen)
+        scale = np.clip(scale, 0, 1)
+        scale_factor[mask] = 1.0 + scale
+
+        total_sigma *= scale_factor
 
     norm = 1.0 / (np.sqrt(2 * np.pi) * total_sigma)
     exponent = -0.5 * ((pmdec - mu) / total_sigma) ** 2
@@ -197,7 +209,7 @@ pmra_params = {'c1': -0.164, 'c2': -0.349, 'c3': -0.057}
 lsigpmra = -1.342
 sigma_pmra = (10 ** lsigpmra) * sigma_scale_factor
 
-def pmra_gaussian(pmra, phi1, pmra_error=None):
+def pmra_gaussian(pmra, phi1, pmra_error=None, widen=None):
     """
     Evaluate the Gaussian PDF for pmra at given phi1 values, optionally incorporating per-star pmra error.
     
@@ -206,6 +218,8 @@ def pmra_gaussian(pmra, phi1, pmra_error=None):
     - phi1 : float or np.ndarray (same shape)
     - pmra_error : float or np.ndarray (same shape), optional
         Observational errors on pmra. If None, only intrinsic scatter is used.
+    - widen : float or None
+        If float, specifies the phi1 value where sigma begins to widen, reaching 2x sigma at phi1=30.
     
     Returns:
     - Gaussian PDF values
@@ -215,14 +229,24 @@ def pmra_gaussian(pmra, phi1, pmra_error=None):
     if pmra_error is None:
         total_sigma = sigma_pmra
     else:
-        pmra_error = np.asarray(pmra_error) #verify it's an array
+        pmra_error = np.asarray(pmra_error)
         safe_error = np.where(
             np.isfinite(pmra_error) & np.isreal(pmra_error),
             pmra_error,
             0.0
         )
-
         total_sigma = np.sqrt(sigma_pmra**2 + safe_error**2)
+
+    if widen is not None:
+        phi1 = np.asarray(phi1)
+        scale_factor = np.ones_like(phi1)
+
+        mask = phi1 > widen
+        scale = (phi1[mask] - widen) / (30.0 - widen)
+        scale = np.clip(scale, 0, 1)
+        scale_factor[mask] = 1.0 + scale
+
+        total_sigma *= scale_factor
 
     norm = 1.0 / (np.sqrt(2 * np.pi) * total_sigma)
     exponent = -0.5 * ((pmra - mu) / total_sigma) ** 2
