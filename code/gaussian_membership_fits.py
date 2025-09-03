@@ -146,21 +146,36 @@ pmdec_params = {'c1': -0.982, 'c2': -0.089, 'c3': 0.025}
 lsigpmdec = -1.510
 sigma_pmdec = (10 ** lsigpmdec) * sigma_scale_factor
 
-def pmdec_gaussian(pmdec, phi1):
+def pmdec_gaussian(pmdec, phi1, pmdec_error=None):
     """
-    Evaluate the Gaussian PDF for pmdec at given phi1 values.
+    Evaluate the Gaussian PDF for pmdec at given phi1 values, optionally incorporating per-star pmdec error.
     
     Parameters:
     - pmdec : float or np.ndarray
     - phi1 : float or np.ndarray (same shape)
+    - pmdec_error : float or np.ndarray (same shape), optional
+        Observational errors on pmdec. If None, only intrinsic scatter is used.
     
     Returns:
-    - gaussian PDF values
+    - Gaussian PDF values
     """
     mu = quad_f(phi1, pmdec_params['c1'], pmdec_params['c2'], pmdec_params['c3'])
-    sigma = sigma_pmdec
-    norm = 1.0 / (np.sqrt(2 * np.pi) * sigma)
-    exponent = -0.5 * ((pmdec - mu) / sigma) ** 2
+
+    if pmdec_error is None:
+        total_sigma = sigma_pmdec
+    else:
+        pmdec_error = np.asarray(pmdec_error) #verify it's an array
+        safe_error = np.where(
+            np.isfinite(pmdec_error) & np.isreal(pmdec_error),
+            pmdec_error,
+            0.0
+        )
+
+        total_sigma = np.sqrt(sigma_pmdec**2 + safe_error**2)
+
+    norm = 1.0 / (np.sqrt(2 * np.pi) * total_sigma)
+    exponent = -0.5 * ((pmdec - mu) / total_sigma) ** 2
+
     return norm * np.exp(exponent)
     
 phi1_vals = np.linspace(-30, 30, 300)
@@ -182,21 +197,36 @@ pmra_params = {'c1': -0.164, 'c2': -0.349, 'c3': -0.057}
 lsigpmra = -1.342
 sigma_pmra = (10 ** lsigpmra) * sigma_scale_factor
 
-def pmra_gaussian(pmra, phi1):
+def pmra_gaussian(pmra, phi1, pmra_error=None):
     """
-    Evaluate the Gaussian PDF for pmra at given phi1 values.
+    Evaluate the Gaussian PDF for pmra at given phi1 values, optionally incorporating per-star pmra error.
     
     Parameters:
     - pmra : float or np.ndarray
     - phi1 : float or np.ndarray (same shape)
+    - pmra_error : float or np.ndarray (same shape), optional
+        Observational errors on pmra. If None, only intrinsic scatter is used.
     
     Returns:
-    - gaussian PDE values
+    - Gaussian PDF values
     """
     mu = quad_f(phi1, pmra_params['c1'], pmra_params['c2'], pmra_params['c3'])
-    sigma = sigma_pmra
-    norm = 1.0 / (np.sqrt(2 * np.pi) * sigma)
-    exponent = -0.5 * ((pmra - mu) / sigma) ** 2
+
+    if pmra_error is None:
+        total_sigma = sigma_pmra
+    else:
+        pmra_error = np.asarray(pmra_error) #verify it's an array
+        safe_error = np.where(
+            np.isfinite(pmra_error) & np.isreal(pmra_error),
+            pmra_error,
+            0.0
+        )
+
+        total_sigma = np.sqrt(sigma_pmra**2 + safe_error**2)
+
+    norm = 1.0 / (np.sqrt(2 * np.pi) * total_sigma)
+    exponent = -0.5 * ((pmra - mu) / total_sigma) ** 2
+
     return norm * np.exp(exponent)
 
 phi1_vals = np.linspace(-30, 30, 300)
