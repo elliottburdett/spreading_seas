@@ -112,41 +112,45 @@ def filter_data_score(color, mag, spl_near, spl_far, sigma=None):
 
     return score_normalized
 
-def membership_score(pmra, pmdec, phi1):
-    """
-    Compute a membership score (0 to ~max_pdf^2) based on pmra and pmdec Gaussians at given phi1.
-    Returns:
-    - score: float or np.ndarray (same shape as params)
-    """
-    pmra_params = {'c1': -0.164, 'c2': -0.349, 'c3': -0.057}
-    lsigpmra = -1.342
-    sigma_pmra = (10 ** lsigpmra) * sigma_scale_factor
-    pmdec_params = {'c1': -0.982, 'c2': -0.089, 'c3': 0.025}
-    lsigpmdec = -1.510
-    sigma_pmdec = (10 ** lsigpmdec) * sigma_scale_factor
-    def quad_f(phi, c1, c2, c3):
-        x = phi / 10.0
-        return c1 + c2 * x + c3 * x**2
+    lsigspatial = -1 #What is it? Find it
+sigma_spatial = (10 ** lsigspatial) * sigma_scale_factor
+def phi2_gaussian(phi2, phi1, widen=None):
+    total_sigma = sigma_spatial
+    if widen is not None:
+        phi1 = np.asarray(phi1)
+        scale_factor = np.ones_like(phi1)
 
-    mu_pmra = quad_f(phi1, pmra_params['c1'], pmra_params['c2'], pmra_params['c3'])
-    norm_pmra = 1.0 / (np.sqrt(2 * np.pi) * sigma_pmra)
-    exp_pmra = -0.5 * ((pmra - mu_pmra) / sigma_pmra) ** 2
-    g_pmra = norm_pmra * np.exp(exp_pmra)
+        mask = phi1 > widen
+        scale = (phi1[mask] - widen) / (30.0 - widen)
+        scale = np.clip(scale, 0, 1)
+        scale_factor[mask] = 1.0 + scale
 
-    mu_pmdec = quad_f(phi1, pmdec_params['c1'], pmdec_params['c2'], pmdec_params['c3'])
-    norm_pmdec = 1.0 / (np.sqrt(2 * np.pi) * sigma_pmdec)
-    exp_pmdec = -0.5 * ((pmdec - mu_pmdec) / sigma_pmdec) ** 2
-    g_pmdec = norm_pmdec * np.exp(exp_pmdec)
+        total_sigma *= scale_factor
+    norm = 1.0 / (np.sqrt(2 * np.pi) * total_sigma)
+    exponent = -0.5 * ((phi2 - spatial_fit_function(phi1)) / total_sigma) ** 2
 
-    max_score = (1 / (np.sqrt(2 * np.pi) * sigma_pmra)) * (1 / (np.sqrt(2 * np.pi) * sigma_pmdec))
-    score = (g_pmra * g_pmdec) / max_score
-    return score
+    return norm * np.exp(exponent)
+
+phi1_vals = np.linspace(-30, 30, 300)
+phi2_vals = np.linspace(-2, 4, 300)
+
+PHI1, PHI2 = np.meshgrid(phi1_vals, phi2_vals)
+Z = phi2_gaussian(PHI2, PHI1,  widen=0)
+
+plt.figure(figsize=(8, 4))
+plt.contourf(PHI1, PMDEC, Z, levels=50, cmap='plasma')
+plt.colorbar(label='PDF')
+plt.xlabel(r'$\phi_1$')
+plt.ylabel(r'$\phi_2$')
+plt.title('Gaussian PDF for $\phi_2$')
+plt.tight_layout()
+plt.show()
 
 pmdec_params = {'c1': -0.982, 'c2': -0.089, 'c3': 0.025}
 lsigpmdec = -1.510
 sigma_pmdec = (10 ** lsigpmdec) * sigma_scale_factor
 
-def pmdec_gaussian(pmdec, phi1, pmdec_error=None, widen=None):
+def pmdec_gaussian(pmdec, phi1, pmdec_error=None, widen=None, normalize_peak=True):
     """
     Evaluate the Gaussian PDF for pmdec at given phi1 values, optionally incorporating per-star pmdec error.
     
@@ -185,16 +189,22 @@ def pmdec_gaussian(pmdec, phi1, pmdec_error=None, widen=None):
 
         total_sigma *= scale_factor
 
-    norm = 1.0 / (np.sqrt(2 * np.pi) * total_sigma)
     exponent = -0.5 * ((pmdec - mu) / total_sigma) ** 2
 
-    return norm * np.exp(exponent)
+    pdf = np.exp(exponent)
+
+    if not normalize_peak:
+        norm = 1.0 / (np.sqrt(2 * np.pi) * total_sigma)
+        pdf *= norm
+
+    return pdf
+
     
 phi1_vals = np.linspace(-30, 30, 300)
 pmdec_vals = np.linspace(-3, 3, 300)
 
 PHI1, PMDEC = np.meshgrid(phi1_vals, pmdec_vals)
-Z = pmdec_gaussian(PMDEC, PHI1)
+Z = pmdec_gaussian(PMDEC, PHI1,  widen=0)
 
 plt.figure(figsize=(8, 4))
 plt.contourf(PHI1, PMDEC, Z, levels=50, cmap='plasma')
@@ -209,7 +219,7 @@ pmra_params = {'c1': -0.164, 'c2': -0.349, 'c3': -0.057}
 lsigpmra = -1.342
 sigma_pmra = (10 ** lsigpmra) * sigma_scale_factor
 
-def pmra_gaussian(pmra, phi1, pmra_error=None, widen=None):
+def pmra_gaussian(pmra, phi1, pmra_error=None, widen=None, normalize_peak=True):
     """
     Evaluate the Gaussian PDF for pmra at given phi1 values, optionally incorporating per-star pmra error.
     
@@ -248,22 +258,67 @@ def pmra_gaussian(pmra, phi1, pmra_error=None, widen=None):
 
         total_sigma *= scale_factor
 
-    norm = 1.0 / (np.sqrt(2 * np.pi) * total_sigma)
     exponent = -0.5 * ((pmra - mu) / total_sigma) ** 2
 
-    return norm * np.exp(exponent)
+    pdf = np.exp(exponent)
+
+    if not normalize_peak:
+        norm = 1.0 / (np.sqrt(2 * np.pi) * total_sigma)
+        pdf *= norm
+
+    return pdf
+
 
 phi1_vals = np.linspace(-30, 30, 300)
 pmra_vals = np.linspace(-3, 3, 300)
 
 PHI1, PMRA = np.meshgrid(phi1_vals, pmra_vals)
-Z = pmra_gaussian(PMRA, PHI1)
+Z = pmra_gaussian(PMRA, PHI1, widen=0, normalize_peak=True)
 
 plt.figure(figsize=(8, 4))
 plt.contourf(PHI1, PMRA, Z, levels=50, cmap='viridis')
 plt.colorbar(label='PDF')
 plt.xlabel(r'$\phi_1$')
 plt.ylabel(r'$\mu_\alpha cos\delta$')
-plt.title('Gaussian PDE For PMRA')
+plt.title('Gaussian PDF For PMRA')
+plt.tight_layout()
+plt.show()
+
+lsigspatial = -1.2 #What is it? Find it
+sigma_spatial = (10 ** lsigspatial) * sigma_scale_factor
+def phi2_gaussian(phi2, phi1, widen=None, normalize_peak=True):
+    total_sigma = sigma_spatial
+    if widen is not None:
+        phi1 = np.asarray(phi1)
+        scale_factor = np.ones_like(phi1)
+
+        mask = phi1 > widen
+        scale = (phi1[mask] - widen) / (30.0 - widen)
+        scale = np.clip(scale, 0, 1)
+        scale_factor[mask] = 1.0 + scale
+
+        total_sigma *= scale_factor
+    exponent = -0.5 * ((phi2 - spatial_fit_function(phi1)) / total_sigma) ** 2
+
+    pdf = np.exp(exponent)
+
+    if not normalize_peak:
+        norm = 1.0 / (np.sqrt(2 * np.pi) * total_sigma)
+        pdf *= norm
+
+    return pdf
+
+phi1_vals = np.linspace(-30, 30, 300)
+phi2_vals = np.linspace(-2, 4, 300)
+
+PHI1, PHI2 = np.meshgrid(phi1_vals, phi2_vals)
+Z = phi2_gaussian(PHI2, PHI1,  widen=0)
+
+plt.figure(figsize=(8, 4))
+plt.contourf(PHI1, PMDEC, Z, levels=50, cmap='plasma')
+plt.colorbar(label='PDF')
+plt.xlabel(r'$\phi_1$')
+plt.ylabel(r'$\phi_2$')
+plt.title('Gaussian PDF for $\phi_2$')
 plt.tight_layout()
 plt.show()
