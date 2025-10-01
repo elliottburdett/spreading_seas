@@ -34,7 +34,7 @@ from astropy import units as u
 code_path = "/astro/users/esb30/software/spreading_seas/code"
 sys.path.append(code_path)
 from rotation_matrix import phi12_rotmat
-#from gaussian_membership_fits import quad_f, pmra_gaussian, pmdec_gaussian, phi2_gaussian
+from gaussian_membership_fits import quad_f, pmra_gaussian, pmdec_gaussian, phi2_gaussian
 atlas_rotmat = [[0.83697865, 0.29481904, -0.4610298], [0.51616778, -0.70514011, 0.4861566], [0.18176238, 0.64487142, 0.74236331]]
 delve_path = "/epyc/data/delve/dr3/delve_dr3_gold/delve_dr3_gold/"
 delve_object = lsdb.read_hats(delve_path, columns=['COADD_OBJECT_ID', 'RA', 'DEC', 'PSF_MAG_APER_8_G_CORRECTED', 'PSF_MAG_APER_8_R_CORRECTED', 'PSF_MAG_APER_8_I_CORRECTED', 'PSF_MAG_APER_8_Z_CORRECTED', 'EXT_XGB', 'SOURCE'])
@@ -47,8 +47,8 @@ gaia = lazy_gaia.compute()
 
 delve['Phi1'], delve['Phi2'] = phi12_rotmat(alpha=delve['RA'].to_numpy(),delta=delve['DEC'].to_numpy(),R_phi12_radec=atlas_rotmat)
 gaia['Phi1'], gaia['Phi2'] = phi12_rotmat(alpha=gaia['ra'].to_numpy(),delta=gaia['dec'].to_numpy(),R_phi12_radec=atlas_rotmat)
-delve = delve[(delve['Phi1'] > -30) & (delve['Phi1'] < 30) & (delve['Phi2'] > -2) & (delve['Phi1'] < 4)]
-gaia = gaia[(gaia['Phi1'] > -30) & (gaia['Phi1'] < 30) & (gaia['Phi2'] > -2) & (gaia['Phi1'] < 4)]
+delve = delve[(delve['Phi1'] > -30) & (delve['Phi1'] < 30) & (delve['Phi2'] > -2) & (delve['Phi2'] < 4)]
+gaia = gaia[(gaia['Phi1'] > -30) & (gaia['Phi1'] < 30) & (gaia['Phi2'] > -2) & (gaia['Phi2'] < 4)]
 
 print('Crossmatching Data')
 
@@ -87,5 +87,3 @@ dxg['PMPhi1'], dxg['PMPhi2'] = pmphi12(alpha=dxg['RA'],delta=dxg['DEC'],mu_alpha
 dxg['PMAR_Score'] = pmra_gaussian(pmra=dxg['PMRA'], phi1=dxg['Phi1'])
 dxg['PMDEC_Score'] = pmdec_gaussian(pmdec=dxg['PMDEC'], phi1=dxg['Phi1'])
 dxg['Spatial_Score'] = phi2_gaussian(phi2=dxg['Phi2'], phi1=dxg['Phi1'])
-
-dxg.to_csv('dxg_aau.csv', index=False)
