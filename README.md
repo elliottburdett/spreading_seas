@@ -3,7 +3,7 @@
 This repository contains an observational data-driven pipeline for selecting member stars in the AAU Stream.
 This should be generalized to characterize other streams, given a stream rotation matrix and data catalogs.
 
--Select AAU stars: Reads in a catalog and reduces it to the AAU spatial region.
+- Select AAU stars: Reads in a catalog and reduces it to the AAU spatial region.
 -Rotation matrix: Conducts a coordinate transformation to the stream frame.
 -Gaussian membership models: With previously confirmed member stars, fit stream parameters to phi1, and construct likelihood models based on the function.
 -BHB and RRL selection: Makes a selection of standard candles in the stream region and fits a distance gradient to the stream.
