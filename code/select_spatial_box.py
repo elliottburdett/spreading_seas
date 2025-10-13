@@ -74,33 +74,33 @@ match_radius = 1.0 * u.arcsec
 match_mask = angular_separation < match_radius
 
 dxg = pd.DataFrame({
-    'COADD_OBJECT_ID': delve['COADD_OBJECT_ID'],
-    'RA': delve['RA'],
-    'DEC': delve['DEC'],
-    'Phi1': delve['Phi1'],
-    'Phi2': delve['Phi2'],
-    'G_mag': delve['PSF_MAG_APER_8_G_CORRECTED'],
-    'R_mag': delve['PSF_MAG_APER_8_R_CORRECTED'],
-    'I_mag': delve['PSF_MAG_APER_8_I_CORRECTED'],
-    'Z_mag': delve['PSF_MAG_APER_8_Z_CORRECTED'],
-    'Gaia': match_mask,
-    'PMRA': np.nan,
-    'PMDEC': np.nan,
-    'PMRA_Error': np.nan,
-    'PMDEC_Error': np.nan,
+    'coadd_object_id': delve['COADD_OBJECT_ID'],
+    'ra': delve['RA'],
+    'dec': delve['DEC'],
+    'phi1': delve['Phi1'],
+    'phi2': delve['Phi2'],
+    'g_mag': delve['PSF_MAG_APER_8_G_CORRECTED'],
+    'r_mag': delve['PSF_MAG_APER_8_R_CORRECTED'],
+    'i_mag': delve['PSF_MAG_APER_8_I_CORRECTED'],
+    'z_mag': delve['PSF_MAG_APER_8_Z_CORRECTED'],
+    'gaia': match_mask,
+    'pmra': np.nan,
+    'pmdec': np.nan,
+    'pmra_error': np.nan,
+    'pmdec_error': np.nan,
 })
 
 gaia_matched = gaia.iloc[idx[match_mask]].reset_index(drop=True)
 
-dxg.loc[match_mask, 'PMRA'] = gaia_matched['pmra'].values
-dxg.loc[match_mask, 'PMDEC'] = gaia_matched['pmdec'].values
-dxg.loc[match_mask, 'PMRA_Error'] = gaia_matched['pmra_error'].values
-dxg.loc[match_mask, 'PMDEC_Error'] = gaia_matched['pmdec_error'].values
+dxg.loc[match_mask, 'pmra'] = gaia_matched['pmra'].values
+dxg.loc[match_mask, 'pmdec'] = gaia_matched['pmdec'].values
+dxg.loc[match_mask, 'pmra_error'] = gaia_matched['pmra_error'].values
+dxg.loc[match_mask, 'pmdec_error'] = gaia_matched['pmdec_error'].values
 
-dxg['PMPhi1'], dxg['PMPhi2'] = pmphi12(alpha=dxg['RA'],delta=dxg['DEC'],mu_alpha_cos_delta=dxg['PMRA'],mu_delta=dxg['PMDEC'],R_phi12_radec=atlas_rotmat)
+dxg['pmphi1'], dxg['pmphi2'] = pmphi12(alpha=dxg['ra'],delta=dxg['dec'],mu_alpha_cos_delta=dxg['pmra'],mu_delta=dxg['pmdec'],R_phi12_radec=atlas_rotmat)
 
-dxg['PMRA_Score'] = pmra_gaussian(pmra=dxg['PMRA'], phi1=dxg['Phi1'])
-dxg['PMDEC_Score'] = pmdec_gaussian(pmdec=dxg['PMDEC'], phi1=dxg['Phi1'])
-dxg['Spatial_Score'] = phi2_gaussian(phi2=dxg['Phi2'], phi1=dxg['Phi1'])
+dxg['pmra_score'] = pmra_gaussian(pmra=dxg['pmra'], phi1=dxg['phi1'])
+dxg['pmdec_score'] = pmdec_gaussian(pmdec=dxg['pmdec'], phi1=dxg['phi1'])
+dxg['spatial_score'] = phi2_gaussian(phi2=dxg['phi2'], phi1=dxg['phi1'])
 
 dxg.to_parquet("dxg_aau.parquet", compression="snappy")

@@ -72,23 +72,23 @@ bhb = bhb[(bhb['pmra_score'] * bhb['pmdec_score'] > 0.5) & bhb['spatial_score'] 
 rrl['distance_modulus'] = (rrl['phot_g_mean_mag_gaia']-rrl['MGmag_gaia_rrl_w_dist'])
 
 rrl_subset = pd.DataFrame({
-    'RA': rrl['ra'],
-    'Dec': rrl['dec'],
-    'Phi1': rrl['phi1'],
-    'Phi2': rrl['phi2'],
-    'Distance_Modulus': rrl['distance_modulus'],
-    'RRL?': True,
-    'BHB?': False
+    'ra': rrl['ra'],
+    'dec': rrl['dec'],
+    'phi1': rrl['phi1'],
+    'phi2': rrl['phi2'],
+    'distance_modulus': rrl['distance_modulus'],
+    'rrl?': True,
+    'bhb?': False
 })
 
 bhb_subset = pd.DataFrame({
-    'RA': bhb['ra_gaia'],
-    'Dec': bhb['dec_gaia'],
-    'Phi1': bhb['phi1'],
-    'Phi2': bhb['phi2'],
-    'Distance_Modulus': bhb['distance_modulus'],
-    'RRL?': False,
-    'BHB?': True
+    'ra': bhb['ra_gaia'],
+    'dec': bhb['dec_gaia'],
+    'phi1': bhb['phi1'],
+    'phi2': bhb['phi2'],
+    'distance_modulus': bhb['distance_modulus'],
+    'rrl?': False,
+    'bhb?': True
 })
 
 bhb_rrl= pd.concat([rrl_subset, bhb_subset], ignore_index=True)
