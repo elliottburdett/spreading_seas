@@ -22,13 +22,31 @@ Creates a table with the following columns:
     -RRL? (boolean)
     -BHB? (boolean)
 '''
+
+__author__ = "Elliott Burdett"
+
 import numpy as np
 import pandas as pd
+import healpy as hp
+import dask
 import hats
 import lsdb
+import astropy
+from astropy.coordinates import SkyCoord
+from astropy.table import Table
+from astropy import units as u
+import matplotlib.pyplot as plt
+from scipy.stats import norm, gaussian_kde
+from scipy.ndimage import gaussian_filter
+from scipy.interpolate import interp1d
+from ugali.analysis.isochrone import factory as isochrone_factory
+import os
+import logging
+import time
+import sys
 code_path = "/astro/users/esb30/software/spreading_seas/code"
 sys.path.append(code_path)
-from rotation_matrix import phi12_rotmat
+from rotation_matrix import phi12_rotmat, pmphi12
 from gaussian_membership_fits import quad_f, pmra_gaussian, pmdec_gaussian, phi2_gaussian
 atlas_rotmat = [[0.83697865, 0.29481904, -0.4610298], [0.51616778, -0.70514011, 0.4861566], [0.18176238, 0.64487142, 0.74236331]]
 

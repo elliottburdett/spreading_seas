@@ -3,6 +3,8 @@ Different ways to fit a background to a healpix array.
 fit_bkg will return BACKGROUND as another healpix array based on a deg-degree polynomial fit as a function of x and y.
 spherical_harmonic_background_fit takes a healpix array and returns both residuals and background as a function of lmax
 '''
+__author__ = "Elliott Burdett"
+
 import hpgeom as hp
 import matplotlib.pyplot as plt
 import pandas as pd

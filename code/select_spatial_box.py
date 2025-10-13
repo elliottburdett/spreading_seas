@@ -24,16 +24,31 @@ Creates a dataframe of objects in DELVE DR3, flagged where it intersects with GA
     Computing Large Datasets should be the most computationally expensive part of the script.
     In the future, LSBD should have the functionality to do a left crossmatch while leaving the datasets lazily loaded.
 '''
+
+__author__ = "Elliott Burdett"
+
 import numpy as np
 import pandas as pd
+import healpy as hp
+import dask
 import hats
 import lsdb
 import astropy
 from astropy.coordinates import SkyCoord
+from astropy.table import Table
 from astropy import units as u
+import matplotlib.pyplot as plt
+from scipy.stats import norm, gaussian_kde
+from scipy.ndimage import gaussian_filter
+from scipy.interpolate import interp1d
+from ugali.analysis.isochrone import factory as isochrone_factory
+import os
+import logging
+import time
+import sys
 code_path = "/astro/users/esb30/software/spreading_seas/code"
 sys.path.append(code_path)
-from rotation_matrix import phi12_rotmat
+from rotation_matrix import phi12_rotmat, pmphi12
 from gaussian_membership_fits import quad_f, pmra_gaussian, pmdec_gaussian, phi2_gaussian
 atlas_rotmat = [[0.83697865, 0.29481904, -0.4610298], [0.51616778, -0.70514011, 0.4861566], [0.18176238, 0.64487142, 0.74236331]]
 delve_path = "/epyc/data/delve/dr3/delve_dr3_gold/delve_dr3_gold/"
@@ -84,6 +99,8 @@ dxg.loc[match_mask, 'PMDEC_Error'] = gaia_matched['pmdec_error'].values
 
 dxg['PMPhi1'], dxg['PMPhi2'] = pmphi12(alpha=dxg['RA'],delta=dxg['DEC'],mu_alpha_cos_delta=dxg['PMRA'],mu_delta=dxg['PMDEC'],R_phi12_radec=atlas_rotmat)
 
-dxg['PMAR_Score'] = pmra_gaussian(pmra=dxg['PMRA'], phi1=dxg['Phi1'])
+dxg['PMRA_Score'] = pmra_gaussian(pmra=dxg['PMRA'], phi1=dxg['Phi1'])
 dxg['PMDEC_Score'] = pmdec_gaussian(pmdec=dxg['PMDEC'], phi1=dxg['Phi1'])
 dxg['Spatial_Score'] = phi2_gaussian(phi2=dxg['Phi2'], phi1=dxg['Phi1'])
+
+dxg.to_parquet("dxg_aau.parquet", compression="snappy")

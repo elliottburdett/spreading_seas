@@ -1,3 +1,9 @@
+'''
+Conducts operations on large healpix cubes.
+'''
+
+__author__ = "Elliott Burdett"
+
 import pandas as pd
 import healpy as hp
 import numpy as np

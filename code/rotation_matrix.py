@@ -1,8 +1,12 @@
+'''
+Rotates to a stream spatial coordinate frame.
+'''
+
 import numpy as np
 
 def phi12_rotmat(alpha,delta,R_phi12_radec):
     '''
-    Nora's Code. It's better. Converts coordinates (alpha,delta) to ones defined by a rotation matrix R_phi12_radec, applied on the original coordinates
+    Converts coordinates (alpha,delta) to ones defined by a rotation matrix R_phi12_radec, applied on the original coordinates
 
     Critical: All angles must be in degrees
     '''

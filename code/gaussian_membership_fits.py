@@ -1,8 +1,40 @@
-from scipy.stats import norm
-import numpy as np
-from scipy.interpolate import interp1d
+"""
+Matched-Filter Stream Membership Scoring and Visualization
 
-sigma_scale_factor = 10
+This script provides a set of tools for:
+- Generating color-magnitude matched filters using isochrone models.
+- Evaluating stellar membership likelihoods in a stellar stream using spatial and proper motion Gaussian models.
+- Applying a Gaussian-based scoring filter in photometric space.
+- Visualizing PDF models of proper motion and spatial distributions.
+- Optionally adjusting Gaussian widths with observational uncertainties and spatial widening.
+
+The script assumes the existence of fitted stream models in phi1, phi2, PMRA, and PMDEC, represented by quadratic functions (see aau_fit_functions.py).
+The Gaussian widths (sigmas) are scaled by a global sigma_scale_factor and lsigspatial, which act as tunable hyperparameters
+to better capture the distribution of less confidently identified stream members (stragglers).
+"""
+
+__author__ = "Elliott Burdett"
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import norm, gaussian_kde
+from scipy.ndimage import gaussian_filter
+from scipy.interpolate import interp1d
+from ugali.analysis.isochrone import factory as isochrone_factory
+
+coefficients = [-0.00323187, -0.00125681,  0.80142462] #Assumed from Andrew Li's S5 AAU Members
+spatial_fit_function = np.poly1d(coefficients)
+
+sigma_scale_factor = 10 #Optional: figure out a data-driven way to scale the spread of the gaussians.
+
+def quad_f(phi,c1,c2,c3):
+    '''
+    Quadratic function
+    
+    Parameters are all floats, returns a float
+    '''
+    x = phi/10
+    return c1 + c2*x + c3*x**2
 
 def get_filter_splines(age, mu, z, abs_mag_min=2.9, app_mag_max = 23.5, color_min=0, color_max=1, dmu=0.5, C=[0.05, 0.1], E=2., err=None):
     """
@@ -112,42 +144,8 @@ def filter_data_score(color, mag, spl_near, spl_far, sigma=None):
 
     return score_normalized
 
-    lsigspatial = -1 #What is it? Find it
-sigma_spatial = (10 ** lsigspatial) * sigma_scale_factor
-def phi2_gaussian(phi2, phi1, widen=None):
-    total_sigma = sigma_spatial
-    if widen is not None:
-        phi1 = np.asarray(phi1)
-        scale_factor = np.ones_like(phi1)
-
-        mask = phi1 > widen
-        scale = (phi1[mask] - widen) / (30.0 - widen)
-        scale = np.clip(scale, 0, 1)
-        scale_factor[mask] = 1.0 + scale
-
-        total_sigma *= scale_factor
-    norm = 1.0 / (np.sqrt(2 * np.pi) * total_sigma)
-    exponent = -0.5 * ((phi2 - spatial_fit_function(phi1)) / total_sigma) ** 2
-
-    return norm * np.exp(exponent)
-
-phi1_vals = np.linspace(-30, 30, 300)
-phi2_vals = np.linspace(-2, 4, 300)
-
-PHI1, PHI2 = np.meshgrid(phi1_vals, phi2_vals)
-Z = phi2_gaussian(PHI2, PHI1,  widen=0)
-
-plt.figure(figsize=(8, 4))
-plt.contourf(PHI1, PMDEC, Z, levels=50, cmap='plasma')
-plt.colorbar(label='PDF')
-plt.xlabel(r'$\phi_1$')
-plt.ylabel(r'$\phi_2$')
-plt.title('Gaussian PDF for $\phi_2$')
-plt.tight_layout()
-plt.show()
-
-pmdec_params = {'c1': -0.982, 'c2': -0.089, 'c3': 0.025}
-lsigpmdec = -1.510
+pmdec_params = {'c1': -0.982, 'c2': -0.089, 'c3': 0.025} #Assumed from Andrew Li's S5 AAU Members
+lsigpmdec = -1.510 #Assumed from Andrew Li's S5 AAU Members
 sigma_pmdec = (10 ** lsigpmdec) * sigma_scale_factor
 
 def pmdec_gaussian(pmdec, phi1, pmdec_error=None, widen=None, normalize_peak=True):
@@ -199,24 +197,8 @@ def pmdec_gaussian(pmdec, phi1, pmdec_error=None, widen=None, normalize_peak=Tru
 
     return pdf
 
-    
-phi1_vals = np.linspace(-30, 30, 300)
-pmdec_vals = np.linspace(-3, 3, 300)
-
-PHI1, PMDEC = np.meshgrid(phi1_vals, pmdec_vals)
-Z = pmdec_gaussian(PMDEC, PHI1,  widen=0)
-
-plt.figure(figsize=(8, 4))
-plt.contourf(PHI1, PMDEC, Z, levels=50, cmap='plasma')
-plt.colorbar(label='PDF')
-plt.xlabel(r'$\phi_1$')
-plt.ylabel(r'$\mu_\delta$')
-plt.title('Gaussian PDF for PMDEC')
-plt.tight_layout()
-plt.show()
-
-pmra_params = {'c1': -0.164, 'c2': -0.349, 'c3': -0.057}
-lsigpmra = -1.342
+pmra_params = {'c1': -0.164, 'c2': -0.349, 'c3': -0.057} #Assumed from Andrew Li's S5 AAU Members
+lsigpmra = -1.342 #Assumed from Andrew Li's S5 AAU Members
 sigma_pmra = (10 ** lsigpmra) * sigma_scale_factor
 
 def pmra_gaussian(pmra, phi1, pmra_error=None, widen=None, normalize_peak=True):
@@ -268,23 +250,7 @@ def pmra_gaussian(pmra, phi1, pmra_error=None, widen=None, normalize_peak=True):
 
     return pdf
 
-
-phi1_vals = np.linspace(-30, 30, 300)
-pmra_vals = np.linspace(-3, 3, 300)
-
-PHI1, PMRA = np.meshgrid(phi1_vals, pmra_vals)
-Z = pmra_gaussian(PMRA, PHI1, widen=0, normalize_peak=True)
-
-plt.figure(figsize=(8, 4))
-plt.contourf(PHI1, PMRA, Z, levels=50, cmap='viridis')
-plt.colorbar(label='PDF')
-plt.xlabel(r'$\phi_1$')
-plt.ylabel(r'$\mu_\alpha cos\delta$')
-plt.title('Gaussian PDF For PMRA')
-plt.tight_layout()
-plt.show()
-
-lsigspatial = -1.2 #What is it? Find it
+lsigspatial = -1.2 #Optional: figure out a data-driven way to scale the spread of the spatial gaussian.
 sigma_spatial = (10 ** lsigspatial) * sigma_scale_factor
 def phi2_gaussian(phi2, phi1, widen=None, normalize_peak=True):
     total_sigma = sigma_spatial
@@ -307,18 +273,3 @@ def phi2_gaussian(phi2, phi1, widen=None, normalize_peak=True):
         pdf *= norm
 
     return pdf
-
-phi1_vals = np.linspace(-30, 30, 300)
-phi2_vals = np.linspace(-2, 4, 300)
-
-PHI1, PHI2 = np.meshgrid(phi1_vals, phi2_vals)
-Z = phi2_gaussian(PHI2, PHI1,  widen=0)
-
-plt.figure(figsize=(8, 4))
-plt.contourf(PHI1, PMDEC, Z, levels=50, cmap='plasma')
-plt.colorbar(label='PDF')
-plt.xlabel(r'$\phi_1$')
-plt.ylabel(r'$\phi_2$')
-plt.title('Gaussian PDF for $\phi_2$')
-plt.tight_layout()
-plt.show()

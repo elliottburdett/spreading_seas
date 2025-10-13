@@ -1,5 +1,11 @@
+'''
+Options to plot CMD and Hess Diagrams
+'''
+__author__ = "Elliott Burdett"
+
 import matplotlib.pyplot as plt
 import numpy as np
+
 fig,ax=plt.subplots(1,1,figsize=[6,6])
 def plot_cmd_hist(g,r,ax=ax,sqrt_bin_count=100, cmap='inferno', title='CMD',bright_bound=16,faint_bound=24.5,lower_color=0,higher_color=1):
 

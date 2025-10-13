@@ -1,4 +1,19 @@
-#Movie with NO distance gradient
+'''
+Fits a KDE to the background (In the case of AAU, contamination from Sagittarius), and subtracts it.
+Creates a movie of isochrone-based matched filters, assuming a flat distance gradient.
+'''
+__author__ = "Elliott Burdett"
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import gaussian_kde
+from scipy.ndimage import gaussian_filter
+from matplotlib import gridspec
+import matplotlib.colors as mcolors
+from delve_dr3_map_partitions import get_filter_splines, filter_data
+from aau_fit_functions import spatial_fit_function
+from cmd_plots import plot_cmd_hist
+
 bins_x = np.linspace(-30, 35, 200)
 bins_y = np.linspace(-4, 4, 80)
 
