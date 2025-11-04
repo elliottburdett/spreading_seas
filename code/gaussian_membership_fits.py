@@ -9,7 +9,7 @@ This script provides a set of tools for:
 - Optionally adjusting Gaussian widths with observational uncertainties and spatial widening.
 
 The script assumes the existence of fitted stream models in phi1, phi2, PMRA, and PMDEC, represented by quadratic functions (see aau_fit_functions.py).
-The Gaussian widths (sigmas) are scaled by a global sigma_scale_factor and lsigspatial, which act as tunable hyperparameters
+The Gaussian widths (sigmas) are scaled by a global lsigspatial, which acts as a tunable hyperparameter
 to better capture the distribution of less confidently identified stream members (stragglers).
 """
 
@@ -24,8 +24,6 @@ from ugali.analysis.isochrone import factory as isochrone_factory
 
 coefficients = [-0.00323187, -0.00125681,  0.80142462] #Assumed from Andrew Li's S5 AAU Members
 spatial_fit_function = np.poly1d(coefficients)
-
-sigma_scale_factor = 10 #Optional: figure out a data-driven way to scale the spread of the gaussians.
 
 def quad_f(phi,c1,c2,c3):
     '''
@@ -146,7 +144,7 @@ def filter_data_score(color, mag, spl_near, spl_far, sigma=None):
 
 pmdec_params = {'c1': -0.982, 'c2': -0.089, 'c3': 0.025} #Assumed from Andrew Li's S5 AAU Members
 lsigpmdec = -1.510 #Assumed from Andrew Li's S5 AAU Members
-sigma_pmdec = (10 ** lsigpmdec) * sigma_scale_factor
+sigma_pmdec = (10 ** lsigpmdec)
 
 def pmdec_gaussian(pmdec, phi1, pmdec_error=None, widen=None, normalize_peak=True):
     """
@@ -199,7 +197,7 @@ def pmdec_gaussian(pmdec, phi1, pmdec_error=None, widen=None, normalize_peak=Tru
 
 pmra_params = {'c1': -0.164, 'c2': -0.349, 'c3': -0.057} #Assumed from Andrew Li's S5 AAU Members
 lsigpmra = -1.342 #Assumed from Andrew Li's S5 AAU Members
-sigma_pmra = (10 ** lsigpmra) * sigma_scale_factor
+sigma_pmra = (10 ** lsigpmra)
 
 def pmra_gaussian(pmra, phi1, pmra_error=None, widen=None, normalize_peak=True):
     """
@@ -251,7 +249,7 @@ def pmra_gaussian(pmra, phi1, pmra_error=None, widen=None, normalize_peak=True):
     return pdf
 
 lsigspatial = -1.2 #Optional: figure out a data-driven way to scale the spread of the spatial gaussian.
-sigma_spatial = (10 ** lsigspatial) * sigma_scale_factor
+sigma_spatial = (10 ** lsigspatial)
 def phi2_gaussian(phi2, phi1, widen=None, normalize_peak=True):
     total_sigma = sigma_spatial
     if widen is not None:
