@@ -99,8 +99,8 @@ dxg.loc[match_mask, 'pmdec_error'] = gaia_matched['pmdec_error'].values
 
 dxg['pmphi1'], dxg['pmphi2'] = pmphi12(alpha=dxg['ra'],delta=dxg['dec'],mu_alpha_cos_delta=dxg['pmra'],mu_delta=dxg['pmdec'],R_phi12_radec=atlas_rotmat)
 
-dxg['pmra_score'] = pmra_gaussian(pmra=dxg['pmra'], phi1=dxg['phi1'])
-dxg['pmdec_score'] = pmdec_gaussian(pmdec=dxg['pmdec'], phi1=dxg['phi1'])
+dxg['pmra_score'] = pmra_gaussian(pmra=dxg['pmra'], phi1=dxg['phi1'], pmra_error=dxg['pmra_error'])
+dxg['pmdec_score'] = pmdec_gaussian(pmdec=dxg['pmdec'], phi1=dxg['phi1']=dxg['pmdec_error'])
 dxg['spatial_score'] = phi2_gaussian(phi2=dxg['phi2'], phi1=dxg['phi1'])
 
 dxg.to_parquet("dxg_aau.parquet", compression="snappy")
