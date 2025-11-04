@@ -14,13 +14,23 @@ RRL Characterization:
     -Apply spatial cut (See gaussian_membership_fits)
     -Assume Gaia distance
 Creates a table with the following columns:
-    -RA
-    -Dec
-    -Phi1
-    -Phi2
-    -Distance
-    -RRL? (boolean)
-    -BHB? (boolean)
+    'ra'
+    'dec'
+    'phi1'
+    'phi2'
+    'distance_modulus'
+    'pmra'
+    'pmdec'
+    'pmra_score'
+    'pmdec_score'
+    'spatial_score'
+    'gaia_g'
+    'gaia_bp'
+    'gaia_rp'
+    'delve_g'
+    'delve_r'
+    'rrl?'
+    'bhb?'
 '''
 
 __author__ = "Elliott Burdett"
@@ -52,17 +62,17 @@ atlas_rotmat = [[0.83697865, 0.29481904, -0.4610298], [0.51616778, -0.70514011, 
 delve_path = "/epyc/data/delve/dr3/delve_dr3_gold/delve_dr3_gold/"
 delve_object = lsdb.read_hats(delve_path, columns=['COADD_OBJECT_ID', 'RA', 'DEC', 'PSF_MAG_APER_8_G_CORRECTED', 'PSF_MAG_APER_8_R_CORRECTED', 'PSF_MAG_APER_8_I_CORRECTED', 'PSF_MAG_APER_8_Z_CORRECTED', 'EXT_XGB', 'SOURCE'])
 lazy_delve = delve_object.query("PSF_MAG_APER_8_G_CORRECTED > 16 and PSF_MAG_APER_8_G_CORRECTED < 24.5 and PSF_MAG_APER_8_G_CORRECTED - PSF_MAG_APER_8_R_CORRECTED > -0.3 and PSF_MAG_APER_8_G_CORRECTED - PSF_MAG_APER_8_R_CORRECTED < 1 and EXT_XGB == 0")
-lazy_gaia = lsdb.read_hats('/epyc/data3/hats/catalogs/gaia_dr3/gaia/', columns=["ra", "dec", "pm", "pmra", "pmdec", "pmra_error", "pmdec_error"])
+lazy_gaia = lsdb.read_hats('/epyc/data3/hats/catalogs/gaia_dr3/gaia/', columns=["ra", "dec", "pm", "pmra", "pmdec", "pmra_error", "pmdec_error", "phot_g_mean_mag", "phot_bp_mean_mag", "phot_rp_mean_mag"])
 lazy_dxg = lazy_delve.crossmatch(lazy_gaia, n_neighbors=1, radius_arcsec=10)
 print('Computing Dataset')
 dxg = lazy_dxg.compute()
 
 dxg['phi1'], dxg['phi2'] = phi12_rotmat(alpha=dxg['RA_delve_dr3_gold'].to_numpy(),delta=dxg['DEC_delve_dr3_gold'].to_numpy(),R_phi12_radec=atlas_rotmat)
 dxg_on = dxg[(dxg['phi1'] > -30) &(dxg['phi2'] < 4) &(dxg['phi2'] > -2) & (dxg['phi1'] < 30)] # Use the aau filter on 'dxg_on' for pmra vs pmdec plot -5 to 5
-dxg_on['g_abs'] = dxg_on['PSF_MAG_APER_8_G_CORRECTED_delve_dr3_gold'] - 16.66
+dxg_on['g_abs'] = dxg_on['g_mag'] - 16.66
 bhb = dxg_on[
-    (dxg_on['PSF_MAG_APER_8_G_CORRECTED_delve_dr3_gold'] - dxg_on['PSF_MAG_APER_8_R_CORRECTED_delve_dr3_gold'] > -0.3) & 
-    (dxg_on['PSF_MAG_APER_8_G_CORRECTED_delve_dr3_gold'] - dxg_on['PSF_MAG_APER_8_R_CORRECTED_delve_dr3_gold'] < 0) & 
+    (dxg_on['g_mag'] - dxg_on['r_mag'] > -0.3) & 
+    (dxg_on['g_mag'] - dxg_on['r_mag'] < 0) & 
     (dxg_on['g_abs'] > -1) & 
     (dxg_on['g_abs'] < 2) #BHB gmags usually range from 0 to 1, and I am allowing a distance gradient of +/- 1 on each side
 ]
@@ -72,23 +82,18 @@ gaia_rrl_catalog = gaia_rrl_catalog.rename(columns={'Gaia_gaia_rrl_w_dist': 'sou
 gaia_rrl_catalog['phi1'], gaia_rrl_catalog['phi2'] = phi12_rotmat(alpha=gaia_rrl_catalog['ra'],delta=gaia_rrl_catalog['dec'],R_phi12_radec=atlas_rotmat)
 rrl = gaia_rrl_catalog[(gaia_rrl_catalog['phi1'] > -30) & (gaia_rrl_catalog['phi1'] < 30) & (gaia_rrl_catalog['phi2'] > -2) & (gaia_rrl_catalog['phi2'] < 4)]
 
-rrl['pmra_score'] = pmra_gaussian(pmra=rrl['pmra'], phi1=rrl['phi1'])
-rrl['pmdec_score'] = pmdec_gaussian(pmdec=rrl['pmdec'], phi1=rrl['phi1'])
+rrl['pmra_score'] = pmra_gaussian(pmra=rrl['pmra'], phi1=rrl['phi1'], pmra_error=rrl['e_pmra'])
+rrl['pmdec_score'] = pmdec_gaussian(pmdec=rrl['pmdec'], phi1=rrl['phi1'], pmdec_error=rrl['e_pmdec'])
 rrl['spatial_score'] = phi2_gaussian(phi2=rrl['phi2'], phi1=rrl['phi1'])
-bhb['pmra_score'] = pmra_gaussian(pmra=bhb['pmra_gaia'], phi1=bhb['phi1'])
-bhb['pmdec_score'] = pmdec_gaussian(pmdec=bhb['pmdec_gaia'], phi1=bhb['phi1'])
+bhb['pmra_score'] = pmra_gaussian(pmra=bhb['pmra'], phi1=bhb['phi1'], pmra_error=bhb['pmra_error'])
+bhb['pmdec_score'] = pmdec_gaussian(pmdec=bhb['pmdec'], phi1=bhb['phi1'], pmdec_error=bhb['pmdec_error'])
 bhb['spatial_score'] = phi2_gaussian(phi2=bhb['phi2'], phi1=bhb['phi1'])
 
-rrl = rrl[(rrl['pmra_score'] * rrl['pmdec_score'] > 0.5) & rrl['spatial_score'] > 0.5]
-bhb = bhb[(bhb['pmra_score'] * bhb['pmdec_score'] > 0.5) & bhb['spatial_score'] > 0.5]
-
-bhb['g_r'] = bhb['PSF_MAG_APER_8_G_CORRECTED_delve_dr3_gold'] - bhb['PSF_MAG_APER_8_R_CORRECTED_delve_dr3_gold']
-# BHB absolute magnitude relation from Barbosa et al 2022 https://arxiv.org/pdf/2210.02820
-def bhb_absolute_mag(g_r):
-    #return 0.178 / (0.537 + g_r)
+bhb['g_r'] = bhb['g_mag'] - bhb['r_mag']
+def bhb_absolute_mag(g_r): # BHB absolute magnitude relation from Barbosa et al 2022 https://arxiv.org/pdf/2210.02820
     return 0.398 - 0.392 * (g_r) + 2.729 * (g_r)**2 + 29.1128 * (g_r)**3 + 113.569 * (g_r)**4
 bhb['M_g'] = bhb_absolute_mag(bhb['g_r'])
-bhb['distance_modulus'] = bhb['PSF_MAG_APER_8_G_CORRECTED_delve_dr3_gold'] - bhb['M_g']
+bhb['distance_modulus'] = bhb['g_mag'] - bhb['M_g']
 
 rrl['distance_modulus'] = (rrl['phot_g_mean_mag_gaia']-rrl['MGmag_gaia_rrl_w_dist'])
 
@@ -98,19 +103,40 @@ rrl_subset = pd.DataFrame({
     'phi1': rrl['phi1'],
     'phi2': rrl['phi2'],
     'distance_modulus': rrl['distance_modulus'],
+    'pmra': rrl['pmra'],
+    'pmdec': rrl['pmdec'],
+    'pmra_score': rrl['pmra_score'],
+    'pmdec_score': rrl['pmdec_score'],
+    'spatial_score': rrl['spatial_score'],
+    'gaia_g': rrl['MGmag_gaia_rrl_w_dist'],
+    'gaia_bp': rrl['phot_bp_mean_mag_gaia'],
+    'gaia_rp': rrl['phot_rp_mean_mag_gaia'],
+    'delve_g': np.nan,
+    'delve_r': np.nan,
     'rrl?': True,
     'bhb?': False
 })
 
 bhb_subset = pd.DataFrame({
-    'ra': bhb['RA_delve_dr3_gold'],
-    'dec': bhb['DEC_delve_dr3_gold'],
+    'ra': bhb['ra'],
+    'dec': bhb['dec'],
     'phi1': bhb['phi1'],
     'phi2': bhb['phi2'],
     'distance_modulus': bhb['distance_modulus'],
+    'pmra': bhb['pmra'],
+    'pmdec': bhb['pmdec'],
+    'pmra_score': bhb['pmra_score'],
+    'pmdec_score': bhb['pmdec_score'],
+    'spatial_score': bhb['spatial_score'],
+    'gaia_g': bhb['gaia_g'],
+    'gaia_bp': bhb['gaia_bp'],
+    'gaia_rp': bhb['gaia_rp'],
+    'delve_g': bhb['g_mag'],
+    'delve_r': bhb['r_mag'],
     'rrl?': False,
     'bhb?': True
 })
 
 bhb_rrl= pd.concat([rrl_subset, bhb_subset], ignore_index=True)
-bhb_rrl.to_csv('aau_bhb_rrl.csv', index=False)
+good_mask = (bhb_rrl['pmdec_score'] * bhb_rrl['pmra_score'] * bhb_rrl['spatial_score'] > 0.1) & (bhb_rrl['distance_modulus'] < 18.75) # 18.75 is empirically and visually derived
+bhb_rrl[good_mask].to_csv('aau_bhb_rrl.csv', index=False)
