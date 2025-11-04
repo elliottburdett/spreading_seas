@@ -247,9 +247,12 @@ def pmra_gaussian(pmra, phi1, pmra_error=None, widen=None, normalize_peak=True):
         pdf *= norm
 
     return pdf
-
-lsigspatial = -1.2 #Optional: figure out a data-driven way to scale the spread of the spatial gaussian.
-sigma_spatial = (10 ** lsigspatial)
+    
+# aau_members['phi2_model'] = spatial_fit_function(aau_members['phi1'])
+# aau_members['phi2_residual'] = aau_members['phi2'] - aau_members['phi2_model']
+# sigma_phi2 = aau_members['phi2_residual'].std()
+# print(f"Average sigma phi2: {sigma_phi2:.4f} degrees")
+sigma_spatial = 0.4352 #From Andrew Li's members
 def phi2_gaussian(phi2, phi1, widen=None, normalize_peak=True):
     total_sigma = sigma_spatial
     if widen is not None:
