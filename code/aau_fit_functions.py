@@ -30,10 +30,10 @@ pmra_params = {'c1': -0.164, 'c2': -0.349, 'c3': -0.057} #Assumed from Andrew Li
 pmra_fit = quad_f(phi1, pmra_params['c1'], pmra_params['c2'], pmra_params['c3'])
 
 s5_aau_members = Table.read('aau_members_full.fits', format='fits')
-coefficients = np.polyfit(s5_aau_members['phi1'], s5_aau_members['phi2'], deg=2) #Assumed from Andrew Li's S5 AAU Members
-spatial_fit_function = np.poly1d(coefficients) #Coefficients = array([-0.00323187, -0.00125681,  0.80142462])
-
-
-
-
-
+coefficients_left = np.polyfit(s5_aau_members[s5_aau_members['phi1'] < -11.5]['phi1'], s5_aau_members[s5_aau_members['phi1'] < -11.5]['phi2'], deg=2)
+spatial_fit_function_left = np.poly1d(coefficients_left)
+coefficients_right = np.polyfit(s5_aau_members[s5_aau_members['phi1'] > -11.5]['phi1'], s5_aau_members[s5_aau_members['phi1'] > -11.5]['phi2'], deg=2)
+spatial_fit_function_right = np.poly1d(coefficients_right)
+def spatial_fit_function(phi1):
+    x = np.array(phi1)
+    return np.where(x < -11.5, spatial_fit_function_left(phi1), spatial_fit_function_right(phi1))

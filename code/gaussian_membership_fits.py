@@ -22,8 +22,13 @@ from scipy.ndimage import gaussian_filter
 from scipy.interpolate import interp1d
 from ugali.analysis.isochrone import factory as isochrone_factory
 
-coefficients = [-0.00323187, -0.00125681,  0.80142462] #Assumed from Andrew Li's S5 AAU Members
-spatial_fit_function = np.poly1d(coefficients)
+coefficients_left = array([-0.01779665, -0.37163805, -1.16975274])
+coefficients_right = array([-0.00488336,  0.00988029,  0.83630395])
+spatial_fit_function_left = np.poly1d(coefficients_left)
+spatial_fit_function_right = np.poly1d(coefficients_right)
+def spatial_fit_function(phi1):
+    x = np.array(phi1)
+    return np.where(x < -11.5, spatial_fit_function_left(phi1), spatial_fit_function_right(phi1))
 
 def quad_f(phi,c1,c2,c3):
     '''
