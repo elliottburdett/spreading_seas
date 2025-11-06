@@ -62,8 +62,8 @@ gaia = lazy_gaia.compute()
 
 delve['Phi1'], delve['Phi2'] = phi12_rotmat(alpha=delve['RA'].to_numpy(),delta=delve['DEC'].to_numpy(),R_phi12_radec=atlas_rotmat)
 gaia['Phi1'], gaia['Phi2'] = phi12_rotmat(alpha=gaia['ra'].to_numpy(),delta=gaia['dec'].to_numpy(),R_phi12_radec=atlas_rotmat)
-delve = delve[(delve['Phi1'] > -30) & (delve['Phi1'] < 30) & (delve['Phi2'] > -2) & (delve['Phi2'] < 4)]
-gaia = gaia[(gaia['Phi1'] > -30) & (gaia['Phi1'] < 30) & (gaia['Phi2'] > -2) & (gaia['Phi2'] < 4)]
+delve = delve[(delve['Phi1'] > -30) & (delve['Phi1'] < 30) & (delve['Phi2'] > -6) & (delve['Phi2'] < 6)]
+gaia = gaia[(gaia['Phi1'] > -30) & (gaia['Phi1'] < 30) & (gaia['Phi2'] > -6) & (gaia['Phi2'] < 6)]
 
 print('Crossmatching Data')
 

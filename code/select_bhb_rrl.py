@@ -68,7 +68,7 @@ print('Computing Dataset')
 dxg = lazy_dxg.compute()
 
 dxg['phi1'], dxg['phi2'] = phi12_rotmat(alpha=dxg['RA_delve_dr3_gold'].to_numpy(),delta=dxg['DEC_delve_dr3_gold'].to_numpy(),R_phi12_radec=atlas_rotmat)
-dxg_on = dxg[(dxg['phi1'] > -30) &(dxg['phi2'] < 4) &(dxg['phi2'] > -2) & (dxg['phi1'] < 30)] # Use the aau filter on 'dxg_on' for pmra vs pmdec plot -5 to 5
+dxg_on = dxg[(dxg['phi1'] > -30) &(dxg['phi2'] < 6) &(dxg['phi2'] > -6) & (dxg['phi1'] < 30)] # Use the aau filter on 'dxg_on' for pmra vs pmdec plot -5 to 5
 dxg_on['g_abs'] = dxg_on['g_mag'] - 16.66
 bhb = dxg_on[
     (dxg_on['g_mag'] - dxg_on['r_mag'] > -0.3) & 
@@ -80,7 +80,7 @@ bhb = dxg_on[
 gaia_rrl_catalog = pd.read_parquet('/epyc/data/gaia_rrl/li_xmatch.parq')
 gaia_rrl_catalog = gaia_rrl_catalog.rename(columns={'Gaia_gaia_rrl_w_dist': 'source_id', 'ra_gaia_rrl_w_dist': 'ra', 'dec_gaia_rrl_w_dist':'dec', 'Dist_Phot_gaia_rrl_w_dist':'dist', 'e_Dist_Phot_gaia_rrl_w_dist':'e_dist', 'pmra_gaia':'pmra', 'pmra_error_gaia':'e_pmra', 'pmdec_gaia':'pmdec', 'pmdec_error_gaia':'e_pmdec'})
 gaia_rrl_catalog['phi1'], gaia_rrl_catalog['phi2'] = phi12_rotmat(alpha=gaia_rrl_catalog['ra'],delta=gaia_rrl_catalog['dec'],R_phi12_radec=atlas_rotmat)
-rrl = gaia_rrl_catalog[(gaia_rrl_catalog['phi1'] > -30) & (gaia_rrl_catalog['phi1'] < 30) & (gaia_rrl_catalog['phi2'] > -2) & (gaia_rrl_catalog['phi2'] < 4)]
+rrl = gaia_rrl_catalog[(gaia_rrl_catalog['phi1'] > -30) & (gaia_rrl_catalog['phi1'] < 30) & (gaia_rrl_catalog['phi2'] > -6) & (gaia_rrl_catalog['phi2'] < 6)]
 
 rrl['pmra_score'] = pmra_gaussian(pmra=rrl['pmra'], phi1=rrl['phi1'], pmra_error=rrl['e_pmra'])
 rrl['pmdec_score'] = pmdec_gaussian(pmdec=rrl['pmdec'], phi1=rrl['phi1'], pmdec_error=rrl['e_pmdec'])
