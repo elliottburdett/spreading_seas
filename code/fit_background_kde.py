@@ -10,7 +10,7 @@ from scipy.stats import gaussian_kde
 from scipy.ndimage import gaussian_filter
 from matplotlib import gridspec
 import matplotlib.colors as mcolors
-from delve_dr3_map_partitions import get_filter_splines, filter_data
+from filter_data import get_filter_splines, filter_data
 from aau_fit_functions import spatial_fit_function
 from cmd_plots import plot_cmd_hist
 

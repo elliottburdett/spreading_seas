@@ -1,7 +1,7 @@
 """
 adapting elliotts filtering code to test the map_partions function from lsdb
 """
-__author__ = "Peter Ferguson"
+__author__ = "Peter Ferguson & Elliott Burdett" 
 
 import os
 import logging 
@@ -66,9 +66,9 @@ def get_filter_splines(age, mu, z, abs_mag_min=2.9, app_mag_max = 23.5, color_mi
         err = lambda x: 0.0010908679647672335 + np.exp((x - 27.091072029215375) / 1.0904624484538419)
     iso = isochrone_factory('marigo2017', survey='DES', age=age, distance_modulus=mu, z=z)
     
-    gsel = (iso.mag > abs_mag_min) & (iso.mag + mu < app_mag_max)
-    color =iso.color[gsel]
-    mag = iso.mag[gsel]
+    gsel = (iso.mag[0:95] > abs_mag_min) & (iso.mag[0:95] + mu < app_mag_max)
+    color =iso.color[0:95][gsel]
+    mag = iso.mag[0:95][gsel]
     # Spread in magnitude     
     mnear = mag + mu - dmu / 2.
     mfar = mag + mu + dmu / 2.

@@ -21,9 +21,9 @@ Creates a table with the following columns:
     'distance_modulus'
     'pmra'
     'pmdec'
-    'pmra_score'
-    'pmdec_score'
-    'spatial_score'
+    'p_pmra'
+    'p_pmdec'
+    'p_spatial'
     'gaia_g'
     'gaia_bp'
     'gaia_rp'
@@ -82,12 +82,12 @@ gaia_rrl_catalog = gaia_rrl_catalog.rename(columns={'Gaia_gaia_rrl_w_dist': 'sou
 gaia_rrl_catalog['phi1'], gaia_rrl_catalog['phi2'] = phi12_rotmat(alpha=gaia_rrl_catalog['ra'],delta=gaia_rrl_catalog['dec'],R_phi12_radec=atlas_rotmat)
 rrl = gaia_rrl_catalog[(gaia_rrl_catalog['phi1'] > -30) & (gaia_rrl_catalog['phi1'] < 30) & (gaia_rrl_catalog['phi2'] > -6) & (gaia_rrl_catalog['phi2'] < 6)]
 
-rrl['pmra_score'] = pmra_gaussian(pmra=rrl['pmra'], phi1=rrl['phi1'], pmra_error=rrl['e_pmra'])
-rrl['pmdec_score'] = pmdec_gaussian(pmdec=rrl['pmdec'], phi1=rrl['phi1'], pmdec_error=rrl['e_pmdec'])
-rrl['spatial_score'] = phi2_gaussian(phi2=rrl['phi2'], phi1=rrl['phi1'])
-bhb['pmra_score'] = pmra_gaussian(pmra=bhb['pmra'], phi1=bhb['phi1'], pmra_error=bhb['pmra_error'])
-bhb['pmdec_score'] = pmdec_gaussian(pmdec=bhb['pmdec'], phi1=bhb['phi1'], pmdec_error=bhb['pmdec_error'])
-bhb['spatial_score'] = phi2_gaussian(phi2=bhb['phi2'], phi1=bhb['phi1'])
+rrl['p_pmra'] = pmra_gaussian(pmra=rrl['pmra'], phi1=rrl['phi1'], pmra_error=rrl['e_pmra'])
+rrl['p_pmdec'] = pmdec_gaussian(pmdec=rrl['pmdec'], phi1=rrl['phi1'], pmdec_error=rrl['e_pmdec'])
+rrl['p_spatial'] = phi2_gaussian(phi2=rrl['phi2'], phi1=rrl['phi1'])
+bhb['p_pmra'] = pmra_gaussian(pmra=bhb['pmra'], phi1=bhb['phi1'], pmra_error=bhb['pmra_error'])
+bhb['p_pmdec'] = pmdec_gaussian(pmdec=bhb['pmdec'], phi1=bhb['phi1'], pmdec_error=bhb['pmdec_error'])
+bhb['p_spatial'] = phi2_gaussian(phi2=bhb['phi2'], phi1=bhb['phi1'])
 
 bhb['g_r'] = bhb['g_mag'] - bhb['r_mag']
 def bhb_absolute_mag(g_r): # BHB absolute magnitude relation from Barbosa et al 2022 https://arxiv.org/pdf/2210.02820
@@ -105,9 +105,9 @@ rrl_subset = pd.DataFrame({
     'distance_modulus': rrl['distance_modulus'],
     'pmra': rrl['pmra'],
     'pmdec': rrl['pmdec'],
-    'pmra_score': rrl['pmra_score'],
-    'pmdec_score': rrl['pmdec_score'],
-    'spatial_score': rrl['spatial_score'],
+    'p_pmra': rrl['p_pmra'],
+    'p_pmdec': rrl['p_pmdec'],
+    'p_spatial': rrl['p_spatial'],
     'gaia_g': rrl['MGmag_gaia_rrl_w_dist'],
     'gaia_bp': rrl['phot_bp_mean_mag_gaia'],
     'gaia_rp': rrl['phot_rp_mean_mag_gaia'],
@@ -125,9 +125,9 @@ bhb_subset = pd.DataFrame({
     'distance_modulus': bhb['distance_modulus'],
     'pmra': bhb['pmra'],
     'pmdec': bhb['pmdec'],
-    'pmra_score': bhb['pmra_score'],
-    'pmdec_score': bhb['pmdec_score'],
-    'spatial_score': bhb['spatial_score'],
+    'p_pmra': bhb['p_pmra'],
+    'p_pmdec': bhb['p_pmdec'],
+    'p_spatial': bhb['p_spatial'],
     'gaia_g': bhb['gaia_g'],
     'gaia_bp': bhb['gaia_bp'],
     'gaia_rp': bhb['gaia_rp'],
@@ -138,5 +138,5 @@ bhb_subset = pd.DataFrame({
 })
 
 bhb_rrl= pd.concat([rrl_subset, bhb_subset], ignore_index=True)
-good_mask = (bhb_rrl['pmdec_score'] * bhb_rrl['pmra_score'] * bhb_rrl['spatial_score'] > 0.1) & (bhb_rrl['distance_modulus'] < 18.75) # 18.75 is empirically and visually derived
+good_mask = (bhb_rrl['p_pmdec'] * bhb_rrl['p_pmra'] * bhb_rrl['p_spatial'] > 0.1) & (bhb_rrl['distance_modulus'] < 18.75) # 18.75 is empirically and visually derived
 bhb_rrl[good_mask].to_csv('aau_bhb_rrl.csv', index=False)

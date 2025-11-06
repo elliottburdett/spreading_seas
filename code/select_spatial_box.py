@@ -1,28 +1,31 @@
 '''
 Creates a dataframe of objects in DELVE DR3, flagged where it intersects with GAIA DR3.
     Columns:
-        -Coadd Object ID
-        -G mag (PSF)
-        -R mag (PSF)
-        -I mag (PSF)
-        -Z mag (PSF)
-        -RA
-        -DEC
-        -Phi1 (AAU)
-        -Phi2 (AAU)
-        -Gaia? (boolean)
-        -PMRA (if GAIA)
-        -PMDEC (if GAIA)
-        -PMRA Error (if GAIA)
-        -PMDEC Error (if GAIA)
-        -PMPhi1 (if GAIA)
-        -PMPhi2 (if GAIA)
-        -PMRA Match Score (AAU, 0-1)
-        -PMDEC Match Score (AAU, 0-1)
-        -Spatial Match Score (AAU, 0-1)
-    This should be repurposed to make for other stream data and AAU-Specific constants are flagged.
+        'coadd_object_id',
+        'ra',
+        'dec',
+        'phi1',
+        'phi2',
+        'g_mag',
+        'r_mag',
+        'i_mag',
+        'z_mag',
+        'gaia',
+        'pmra',
+        'pmdec',
+        'pmra_error',
+        'pmdec_error',
+        'pmphi1',
+        'pmphi2',
+        'p_pmra',
+        'p_pmdec',
+        'p_spatial',
+        'p_photometric',
+        'p_total'
+    This should be repurposed to make for other stream data. At the moment, AAU-Specific constants are hardcoded.
     Computing Large Datasets should be the most computationally expensive part of the script.
     In the future, LSBD should have the functionality to do a left crossmatch while leaving the datasets lazily loaded.
+    P_total represents the probability that a given star is an AAU stream member and finding it is the purpose of this script and repository.
 '''
 
 __author__ = "Elliott Burdett"
@@ -48,6 +51,7 @@ import time
 import sys
 code_path = "/astro/users/esb30/software/spreading_seas/code"
 sys.path.append(code_path)
+from filter_data import get_filter_splines, filter_data
 from rotation_matrix import phi12_rotmat, pmphi12
 from gaussian_membership_fits import quad_f, pmra_gaussian, pmdec_gaussian, phi2_gaussian
 atlas_rotmat = [[0.83697865, 0.29481904, -0.4610298], [0.51616778, -0.70514011, 0.4861566], [0.18176238, 0.64487142, 0.74236331]]
@@ -99,8 +103,13 @@ dxg.loc[match_mask, 'pmdec_error'] = gaia_matched['pmdec_error'].values
 
 dxg['pmphi1'], dxg['pmphi2'] = pmphi12(alpha=dxg['ra'],delta=dxg['dec'],mu_alpha_cos_delta=dxg['pmra'],mu_delta=dxg['pmdec'],R_phi12_radec=atlas_rotmat)
 
-dxg['pmra_score'] = pmra_gaussian(pmra=dxg['pmra'], phi1=dxg['phi1'], pmra_error=dxg['pmra_error'])
-dxg['pmdec_score'] = pmdec_gaussian(pmdec=dxg['pmdec'], phi1=dxg['phi1']=dxg['pmdec_error'])
-dxg['spatial_score'] = phi2_gaussian(phi2=dxg['phi2'], phi1=dxg['phi1'])
+dxg['p_pmra'] = pmra_gaussian(pmra=dxg['pmra'], phi1=dxg['phi1'], pmra_error=dxg['pmra_error'])
+dxg['p_pmdec'] = pmdec_gaussian(pmdec=dxg['pmdec'], phi1=dxg['phi1']=dxg['pmdec_error'])
+dxg['p_spatial'] = phi2_gaussian(phi2=dxg['phi2'], phi1=dxg['phi1'])
+def mu(phi1):
+    return 16.727 - 0.0282 * phi1 + 0.00018 * (phi1 ** 2)
+spl_near, spl_far = get_filter_splines(age=12, mu=16.727, z=0.0007, abs_mag_min=2.9, app_mag_max = 23.5, color_min=0, color_max=1, dmu=0.5, C=[0.05, 0.1], E=2., err=None)
+dxg['p_photometric'] = filter_data_score(color=dxg['g_mag']-dxg['r_mag'], mag=dxg['g_mag'] - mu(dxg['phi1']) + 16.727, spl_near=spl_near, spl_far=spl_far, sigma=None)
+dxg['p_total'] = dxg['p_pmdec'] * dxg['p_pmra'] * dxg['p_spatial']*dxg['p_photometric']
 
 dxg.to_parquet("dxg_aau.parquet", compression="snappy")
