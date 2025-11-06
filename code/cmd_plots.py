@@ -32,7 +32,6 @@ def plot_cmd_hist(g,r,ax=ax,sqrt_bin_count=100, cmap='inferno', title='CMD',brig
 
 def plot_cmd_scatter(g,r,ax,color='turquoise',s=20,marker='*',title='CMD'):
 
-    ax.invert_yaxis()
     image = ax.scatter(g-r, g, c=color, s=s, marker=marker)
     ax.invert_yaxis()
     ax.set_xlabel('g-r', fontsize=12)
