@@ -108,7 +108,7 @@ dxg['p_pmdec'] = pmdec_gaussian(pmdec=dxg['pmdec'], phi1=dxg['phi1']=dxg['pmdec_
 dxg['p_spatial'] = phi2_gaussian(phi2=dxg['phi2'], phi1=dxg['phi1'])
 def mu(phi1):
     return 16.727 - 0.0282 * phi1 + 0.00018 * (phi1 ** 2)
-spl_near, spl_far = get_filter_splines(age=12, mu=16.727, z=0.0007, abs_mag_min=2.9, app_mag_max = 23.5, color_min=0, color_max=1, dmu=0.5, C=[0.05, 0.1], E=2., err=None)
+spl_near, spl_far = get_filter_splines(age=12, mu=16.727, z=0.0007, abs_mag_min=-1, app_mag_max = 23.5, color_min=0, color_max=1, dmu=0.5, C=[0.05, 0.1], E=2., err=None)
 dxg['p_photometric'] = filter_data(color=dxg['g_mag']-dxg['r_mag'], mag=dxg['g_mag'] - mu(dxg['phi1']) + 16.727, spl_near=spl_near, spl_far=spl_far)
 dxg['p_photometric'] = dxg['p_photometric'].map({True: 1, False: 0})
 #dxg['p_photometric'] = filter_data_score(color=dxg['g_mag']-dxg['r_mag'], mag=dxg['g_mag'] - mu(dxg['phi1']) + 16.727, spl_near=spl_near, spl_far=spl_far, sigma=None)
