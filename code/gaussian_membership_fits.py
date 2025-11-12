@@ -149,7 +149,8 @@ def filter_data_score(color, mag, spl_near, spl_far, sigma=None):
 
 pmdec_params = {'c1': -0.982, 'c2': -0.089, 'c3': 0.025} #Assumed from Andrew Li's S5 AAU Members
 lsigpmdec = -1.510 #Assumed from Andrew Li's S5 AAU Members
-sigma_pmdec = (10 ** lsigpmdec)
+#sigma_pmdec = (10 ** lsigpmdec)
+sigma_pmdec = 0
 
 def pmdec_gaussian(pmdec, phi1, pmdec_error=None, widen=None, normalize_peak=True):
     """
@@ -202,7 +203,8 @@ def pmdec_gaussian(pmdec, phi1, pmdec_error=None, widen=None, normalize_peak=Tru
 
 pmra_params = {'c1': -0.164, 'c2': -0.349, 'c3': -0.057} #Assumed from Andrew Li's S5 AAU Members
 lsigpmra = -1.342 #Assumed from Andrew Li's S5 AAU Members
-sigma_pmra = (10 ** lsigpmra)
+# sigma_pmra = (10 ** lsigpmra)
+sigma_pmra = 0
 
 def pmra_gaussian(pmra, phi1, pmra_error=None, widen=None, normalize_peak=True):
     """
