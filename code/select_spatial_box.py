@@ -113,5 +113,5 @@ dxg['p_photometric'] = filter_data(color=dxg['g_mag']-dxg['r_mag'], mag=dxg['g_m
 dxg['p_photometric'] = dxg['p_photometric'].map({True: 1, False: 0})
 #dxg['p_photometric'] = filter_data_score(color=dxg['g_mag']-dxg['r_mag'], mag=dxg['g_mag'] - mu(dxg['phi1']) + 16.727, spl_near=spl_near, spl_far=spl_far, sigma=None)
 dxg['p_total'] = dxg['p_pmdec'] * dxg['p_pmra'] * dxg['p_spatial']*dxg['p_photometric']
-
+dxg['is_background'] = (dxg['p_photometric'] == 1) & (dxg['p_total'] < 0.7)
 dxg.to_parquet("dxg_aau.parquet", compression="snappy")
