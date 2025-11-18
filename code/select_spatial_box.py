@@ -103,9 +103,9 @@ dxg.loc[match_mask, 'pmdec_error'] = gaia_matched['pmdec_error'].values
 
 dxg['pmphi1'], dxg['pmphi2'] = pmphi12(alpha=dxg['ra'],delta=dxg['dec'],mu_alpha_cos_delta=dxg['pmra'],mu_delta=dxg['pmdec'],R_phi12_radec=atlas_rotmat)
 
-dxg['p_pmra'] = pmra_gaussian(pmra=dxg['pmra'], phi1=dxg['phi1'], pmra_error=dxg['pmra_error'])
-dxg['p_pmdec'] = pmdec_gaussian(pmdec=dxg['pmdec'], phi1=dxg['phi1']=dxg['pmdec_error'])
-dxg['p_spatial'] = phi2_gaussian(phi2=dxg['phi2'], phi1=dxg['phi1'])
+dxg['p_pmra'] = pmra_gaussian(pmra=dxg['pmra'], phi1=dxg['phi1'], pmra_error=dxg['pmra_error'], stream='AAU')
+dxg['p_pmdec'] = pmdec_gaussian(pmdec=dxg['pmdec'], phi1=dxg['phi1']=dxg['pmdec_error'], stream='AAU')
+dxg['p_spatial'] = phi2_gaussian(phi2=dxg['phi2'], phi1=dxg['phi1'], stream='AAU')
 def mu(phi1):
     return 16.727 - 0.0282 * phi1 + 0.00018 * (phi1 ** 2)
 spl_near, spl_far = get_filter_splines(age=12, mu=16.727, z=0.0007, abs_mag_min=-1, app_mag_max = 23.5, color_min=0, color_max=1, dmu=0.5, C=[0.05, 0.1], E=2., err=None)
