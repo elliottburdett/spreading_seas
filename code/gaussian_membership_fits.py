@@ -22,13 +22,16 @@ from scipy.ndimage import gaussian_filter
 from scipy.interpolate import interp1d
 from ugali.analysis.isochrone import factory as isochrone_factory
 
-coefficients_left = [-0.01779665, -0.37163805, -1.16975274]
-coefficients_right = [-0.00488336,  0.00988029,  0.83630395]
-spatial_fit_function_left = np.poly1d(coefficients_left)
-spatial_fit_function_right = np.poly1d(coefficients_right)
-def spatial_fit_function(phi1):
-    x = np.array(phi1)
-    return np.where(x < -11.5, spatial_fit_function_left(phi1), spatial_fit_function_right(phi1))
+def spatial_fit_function(phi1, stream):
+    if stream == 'AAU':
+        coefficients_left = [-0.01779665, -0.37163805, -1.16975274] # AAU
+        coefficients_right = [-0.00488336,  0.00988029,  0.83630395] # AAU
+        aau_spatial_fit_function_left = np.poly1d(coefficients_left) # AAU
+        aau_spatial_fit_function_right = np.poly1d(coefficients_right) # AAU
+        x = np.array(phi1)
+        return np.where(x < -11.5, aau_spatial_fit_function_left(phi1), aau_spatial_fit_function_right(phi1))
+    else 
+        return 'Unknown Stream. This function supports AAU'
 
 def quad_f(phi,c1,c2,c3):
     '''
@@ -147,12 +150,7 @@ def filter_data_score(color, mag, spl_near, spl_far, sigma=None):
 
     return score_normalized
 
-pmdec_params = {'c1': -0.982, 'c2': -0.089, 'c3': 0.025} #Assumed from Andrew Li's S5 AAU Members
-lsigpmdec = -1.510 #Assumed from Andrew Li's S5 AAU Members
-#sigma_pmdec = (10 ** lsigpmdec)
-sigma_pmdec = 0
-
-def pmdec_gaussian(pmdec, phi1, pmdec_error=None, widen=None, normalize_peak=True):
+def pmdec_gaussian(pmdec, phi1, pmdec_error=None, stream='AAU', widen=None, normalize_peak=True):
     """
     Evaluate the Gaussian PDF for pmdec at given phi1 values, optionally incorporating per-star pmdec error.
     
@@ -167,6 +165,13 @@ def pmdec_gaussian(pmdec, phi1, pmdec_error=None, widen=None, normalize_peak=Tru
     Returns:
     - Gaussian PDF values
     """
+    if stream == 'AAU':
+        pmdec_params = {'c1': -0.982, 'c2': -0.089, 'c3': 0.025} #Assumed from Andrew Li's S5 AAU Members
+        lsigpmdec = -1.510 #Assumed from Andrew Li's S5 AAU Members
+        #sigma_pmdec = (10 ** lsigpmdec)
+        sigma_pmdec = 0
+    else:
+        break
     mu = quad_f(phi1, pmdec_params['c1'], pmdec_params['c2'], pmdec_params['c3'])
 
     if pmdec_error is None:
@@ -201,12 +206,7 @@ def pmdec_gaussian(pmdec, phi1, pmdec_error=None, widen=None, normalize_peak=Tru
 
     return pdf
 
-pmra_params = {'c1': -0.164, 'c2': -0.349, 'c3': -0.057} #Assumed from Andrew Li's S5 AAU Members
-lsigpmra = -1.342 #Assumed from Andrew Li's S5 AAU Members
-# sigma_pmra = (10 ** lsigpmra)
-sigma_pmra = 0
-
-def pmra_gaussian(pmra, phi1, pmra_error=None, widen=None, normalize_peak=True):
+def pmra_gaussian(pmra, phi1, pmra_error=None, stream='AAU', widen=None, normalize_peak=True):
     """
     Evaluate the Gaussian PDF for pmra at given phi1 values, optionally incorporating per-star pmra error.
     
@@ -221,6 +221,13 @@ def pmra_gaussian(pmra, phi1, pmra_error=None, widen=None, normalize_peak=True):
     Returns:
     - Gaussian PDF values
     """
+    if stream == 'AAU':
+        pmra_params = {'c1': -0.164, 'c2': -0.349, 'c3': -0.057} #Assumed from Andrew Li's S5 AAU Members
+        lsigpmra = -1.342 #Assumed from Andrew Li's S5 AAU Members
+        # sigma_pmra = (10 ** lsigpmra)
+        sigma_pmra = 0
+    else:
+        break
     mu = quad_f(phi1, pmra_params['c1'], pmra_params['c2'], pmra_params['c3'])
 
     if pmra_error is None:
@@ -255,12 +262,15 @@ def pmra_gaussian(pmra, phi1, pmra_error=None, widen=None, normalize_peak=True):
 
     return pdf
     
-# aau_members['phi2_model'] = spatial_fit_function(aau_members['phi1'])
-# aau_members['phi2_residual'] = aau_members['phi2'] - aau_members['phi2_model']
-# sigma_phi2 = aau_members['phi2_residual'].std()
-# print(f"Average sigma phi2: {sigma_phi2:.4f} degrees")
-sigma_spatial = 0.4352 #From Andrew Li's members
-def phi2_gaussian(phi2, phi1, widen=None, normalize_peak=True):
+def phi2_gaussian(phi2, phi1, widen=None, normalize_peak=True,  stream='AAU'):
+    if stream == 'AAU':
+        # aau_members['phi2_model'] = spatial_fit_function(aau_members['phi1'])
+        # aau_members['phi2_residual'] = aau_members['phi2'] - aau_members['phi2_model']
+        # sigma_phi2 = aau_members['phi2_residual'].std()
+        # print(f"Average sigma phi2: {sigma_phi2:.4f} degrees")
+        sigma_spatial = 0.4352 #From Andrew Li's members
+    else:
+        break
     total_sigma = sigma_spatial
     if widen is not None:
         phi1 = np.asarray(phi1)

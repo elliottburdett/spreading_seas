@@ -82,12 +82,12 @@ gaia_rrl_catalog = gaia_rrl_catalog.rename(columns={'Gaia_gaia_rrl_w_dist': 'sou
 gaia_rrl_catalog['phi1'], gaia_rrl_catalog['phi2'] = phi12_rotmat(alpha=gaia_rrl_catalog['ra'],delta=gaia_rrl_catalog['dec'],R_phi12_radec=atlas_rotmat)
 rrl = gaia_rrl_catalog[(gaia_rrl_catalog['phi1'] > -30) & (gaia_rrl_catalog['phi1'] < 30) & (gaia_rrl_catalog['phi2'] > -6) & (gaia_rrl_catalog['phi2'] < 6)]
 
-rrl['p_pmra'] = pmra_gaussian(pmra=rrl['pmra'], phi1=rrl['phi1'], pmra_error=rrl['e_pmra'])
-rrl['p_pmdec'] = pmdec_gaussian(pmdec=rrl['pmdec'], phi1=rrl['phi1'], pmdec_error=rrl['e_pmdec'])
-rrl['p_spatial'] = phi2_gaussian(phi2=rrl['phi2'], phi1=rrl['phi1'])
-bhb['p_pmra'] = pmra_gaussian(pmra=bhb['pmra'], phi1=bhb['phi1'], pmra_error=bhb['pmra_error'])
-bhb['p_pmdec'] = pmdec_gaussian(pmdec=bhb['pmdec'], phi1=bhb['phi1'], pmdec_error=bhb['pmdec_error'])
-bhb['p_spatial'] = phi2_gaussian(phi2=bhb['phi2'], phi1=bhb['phi1'])
+rrl['p_pmra'] = pmra_gaussian(pmra=rrl['pmra'], phi1=rrl['phi1'], pmra_error=rrl['e_pmra'], stream='AAU')
+rrl['p_pmdec'] = pmdec_gaussian(pmdec=rrl['pmdec'], phi1=rrl['phi1'], pmdec_error=rrl['e_pmdec'], stream='AAU')
+rrl['p_spatial'] = phi2_gaussian(phi2=rrl['phi2'], phi1=rrl['phi1'], stream='AAU')
+bhb['p_pmra'] = pmra_gaussian(pmra=bhb['pmra'], phi1=bhb['phi1'], pmra_error=bhb['pmra_error'], stream='AAU')
+bhb['p_pmdec'] = pmdec_gaussian(pmdec=bhb['pmdec'], phi1=bhb['phi1'], pmdec_error=bhb['pmdec_error'], stream='AAU')
+bhb['p_spatial'] = phi2_gaussian(phi2=bhb['phi2'], phi1=bhb['phi1'], stream='AAU')
 
 bhb['g_r'] = bhb['g_mag'] - bhb['r_mag']
 def bhb_absolute_mag(g_r): # BHB absolute magnitude relation from Barbosa et al 2022 https://arxiv.org/pdf/2210.02820
