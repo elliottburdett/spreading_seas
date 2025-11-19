@@ -4,6 +4,12 @@ Rotates to a stream spatial coordinate frame.
 
 import numpy as np
 
+def rotation_matrix(stream):
+    if stream == 'AAU':
+        return [[0.83697865, 0.29481904, -0.4610298], [0.51616778, -0.70514011, 0.4861566], [0.18176238, 0.64487142, 0.74236331]] # Atlas rotmat
+    else:
+        return 'Unknown Stream. This function supports AAU'
+
 def phi12_rotmat(alpha,delta,R_phi12_radec):
     '''
     Converts coordinates (alpha,delta) to ones defined by a rotation matrix R_phi12_radec, applied on the original coordinates

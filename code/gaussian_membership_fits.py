@@ -291,7 +291,7 @@ def phi2_gaussian(phi2, phi1, widen=None, normalize_peak=True,  stream='AAU'):
         scale_factor[mask] = 1.0 + scale
 
         total_sigma *= scale_factor
-    exponent = -0.5 * ((phi2 - spatial_fit_function(phi1)) / total_sigma) ** 2
+    exponent = -0.5 * ((phi2 - spatial_fit_function(phi1, stream)) / total_sigma) ** 2
 
     pdf = np.exp(exponent)
 

@@ -63,8 +63,8 @@ parser.add_argument("--stream",type=str,required=True")
 args = parser.parse_args()
 stream = args.stream
 from filter_data import get_filter_splines, filter_data
-from rotation_matrix import phi12_rotmat, pmphi12
-from gaussian_membership_fits import quad_f, pmra_gaussian, pmdec_gaussian, phi2_gaussian, rotation_matrix
+from rotation_matrix import phi12_rotmat, pmphi12, rotation_matrix
+from gaussian_membership_fits import quad_f, pmra_gaussian, pmdec_gaussian, phi2_gaussian
 from stream_details import age, z, get_mu
 rotmat = rotation_matrix(stream)
 get_mu(stream)
