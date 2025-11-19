@@ -30,7 +30,7 @@ def spatial_fit_function(phi1, stream):
         aau_spatial_fit_function_right = np.poly1d(coefficients_right) # AAU
         x = np.array(phi1)
         return np.where(x < -11.5, aau_spatial_fit_function_left(phi1), aau_spatial_fit_function_right(phi1))
-    else 
+    else:
         return 'Unknown Stream. This function supports AAU'
 
 def quad_f(phi,c1,c2,c3):
@@ -171,7 +171,8 @@ def pmdec_gaussian(pmdec, phi1, pmdec_error=None, stream='AAU', widen=None, norm
         #sigma_pmdec = (10 ** lsigpmdec)
         sigma_pmdec = 0
     else:
-        break
+        raise ValueError(f"Stream '{stream}' not implemented in pmdec_gaussian()")
+
     mu = quad_f(phi1, pmdec_params['c1'], pmdec_params['c2'], pmdec_params['c3'])
 
     if pmdec_error is None:
@@ -227,7 +228,8 @@ def pmra_gaussian(pmra, phi1, pmra_error=None, stream='AAU', widen=None, normali
         # sigma_pmra = (10 ** lsigpmra)
         sigma_pmra = 0
     else:
-        break
+        raise ValueError(f"Stream '{stream}' not implemented in pmra_gaussian()")
+
     mu = quad_f(phi1, pmra_params['c1'], pmra_params['c2'], pmra_params['c3'])
 
     if pmra_error is None:
@@ -270,7 +272,8 @@ def phi2_gaussian(phi2, phi1, widen=None, normalize_peak=True,  stream='AAU'):
         # print(f"Average sigma phi2: {sigma_phi2:.4f} degrees")
         sigma_spatial = 0.4352 #From Andrew Li's members
     else:
-        break
+        raise ValueError(f"Stream '{stream}' not implemented in phi2_gaussian()")
+
     total_sigma = sigma_spatial
     if widen is not None:
         phi1 = np.asarray(phi1)
