@@ -269,6 +269,99 @@ def pmra_gaussian(pmra, phi1, pmra_error=None, stream='AAU', widen=None, normali
         pdf *= norm
 
     return pdf
+
+def pm_gaussian_2d(pmra, pmdec, phi1, pmra_error=None, pmdec_error=None, pmra_pmdec_corr=None,
+                   stream='AAU', widen=None, normalize_peak=True):
+    """
+    Evaluate the 2D Gaussian PDF for (pmra, pmdec) at given phi1 values,
+    incorporating covariance between pmra and pmdec.
+
+    Parameters:
+    - pmra : float or np.ndarray
+    - pmdec : float or np.ndarray (same shape as pmra)
+    - phi1 : float or np.ndarray (same shape)
+    - pmra_error : float or np.ndarray, optional
+        Observational errors on pmra.
+    - pmdec_error : float or np.ndarray, optional
+        Observational errors on pmdec.
+    - pmra_pmdec_corr : float or np.ndarray, optional
+        Correlation coefficient between pmra and pmdec errors (rho), in [-1, 1].
+        If None, assumed to be 0 (no covariance).
+    - stream : str
+        Stream name for parameter lookup.
+    - widen : float or None
+        If float, specifies the phi1 value where sigma begins to widen,
+        reaching 2x sigma at phi1=30. Only use if searching for a stream
+        extension, as it is arbitrary and not physically motivated.
+    - normalize_peak : bool
+        If True, peak is normalized to 1 (useful for membership likelihood).
+        If False, the PDF is properly normalized (integrates to 1).
+
+    Returns:
+    - 2D Gaussian PDF values (same shape as inputs)
+    """
+    if stream == 'AAU':
+        pmra_params  = {'c1': -0.164, 'c2': -0.349, 'c3': -0.057}
+        pmdec_params = {'c1': -0.982, 'c2': -0.089, 'c3':  0.025}
+        sigma_pmra_int  = 0 # intrinsic scatter (set to 10**(-1.342) to re-enable)
+        sigma_pmdec_int = 0 # intrinsic scatter (set to 10**(-1.510) to re-enable)
+    else:
+        raise ValueError(f"Stream '{stream}' not implemented in pm_gaussian_2d()")
+
+    phi1  = np.asarray(phi1)
+    pmra  = np.asarray(pmra)
+    pmdec = np.asarray(pmdec)
+
+    # stream tracks
+    mu_pmra  = quad_f(phi1, pmra_params['c1'],  pmra_params['c2'],  pmra_params['c3'])
+    mu_pmdec = quad_f(phi1, pmdec_params['c1'], pmdec_params['c2'], pmdec_params['c3'])
+
+    # total sigmas with intrinsic + observational added in quadrature. Apply to pmra and pmdec
+    def _total_sigma(sigma_int, obs_error):
+        if obs_error is None:
+            return np.full_like(phi1, float(sigma_int), dtype=float)
+        obs = np.asarray(obs_error, dtype=float)
+        safe = np.where(np.isfinite(obs) & np.isreal(obs), obs, 0.0)
+        return np.sqrt(sigma_int**2 + safe**2)
+
+    sigma_1 = _total_sigma(sigma_pmra_int,  pmra_error) # total sigma for pmra
+    sigma_2 = _total_sigma(sigma_pmdec_int, pmdec_error) # total sigma for pmdec
+
+    # optional widening along phi1, implement only if searching for stream extension 
+    if widen is not None:
+        scale_factor = np.ones_like(phi1, dtype=float)
+        mask = phi1 > widen
+        scale = np.clip((phi1[mask] - widen) / (30.0 - widen), 0, 1)
+        scale_factor[mask] = 1.0 + scale
+        sigma_1 = sigma_1 * scale_factor
+        sigma_2 = sigma_2 * scale_factor
+
+    # correlation / covariance
+    if pmra_pmdec_corr is None:
+        rho = np.zeros_like(phi1, dtype=float)
+    else:
+        rho = np.clip(np.asarray(pmra_pmdec_corr, dtype=float), -1 + 1e-9, 1 - 1e-9)
+
+    # residuals (z numerator)
+    d1 = pmra  - mu_pmra # delta pmra
+    d2 = pmdec - mu_pmdec # delta pmdec
+
+    # 2D Gaussian exponent using the inverse of the 2x2 covariance matrix
+    # z = 1/(1-rho^2) * [(d1/s1)^2 - 2*rho*(d1/s1)*(d2/s2) + (d2/s2)^2] for a bivariate Gaussian
+    one_minus_rho2 = 1.0 - rho**2
+    z = (1.0 / one_minus_rho2) * (
+        (d1 / sigma_1)**2
+        - 2.0 * rho * (d1 / sigma_1) * (d2 / sigma_2)
+        + (d2 / sigma_2)**2
+    )
+    pdf = np.exp(-0.5 * z)
+
+    if not normalize_peak:
+        # Full normalization: 1 / (2*pi*s1*s2*sqrt(1-rho^2))
+        norm = 1.0 / (2.0 * np.pi * sigma_1 * sigma_2 * np.sqrt(one_minus_rho2))
+        pdf = pdf * norm
+
+    return pdf
     
 def phi2_gaussian(phi2, phi1, widen=None, normalize_peak=True,  stream='AAU'):
     if stream == 'AAU':
@@ -300,3 +393,101 @@ def phi2_gaussian(phi2, phi1, widen=None, normalize_peak=True,  stream='AAU'):
         pdf *= norm
 
     return pdf
+
+def p_photometric(mag_g, mag_r, g_err, r_err, age, z, mu,
+                  abs_mag_min=2.9, app_mag_max=23.5):
+    """
+    Compute an isochrone-based photometric membership weight for stars.
+
+    This function evaluates how closely each star's observed (g-r) color matches
+    the expected color of a theoretical isochrone at the star's inferred absolute
+    g-band magnitude, assuming a stellar population of given age, metallicity,
+    and distance modulus.
+
+    The returned value is a Gaussian-like weight:
+
+        p = exp[-0.5 * ((color_obs - color_iso) / sigma_color)^2]
+
+    where:
+        - color_obs is the observed (g-r) color,
+        - color_iso is the isochrone-predicted color at the same absolute magnitude,
+        - sigma_color is the propagated color uncertainty.
+
+    A value near 1 indicates strong agreement with the isochrone, while values
+    near 0 indicate poor agreement.
+
+    Parameters
+    ----------
+    mag_g : array-like
+        Observed apparent g-band magnitudes.
+    mag_r : array-like
+        Observed apparent r-band magnitudes.
+    g_err : array-like
+        Uncertainties on g-band magnitudes.
+    r_err : array-like
+        Uncertainties on r-band magnitudes.
+    age : float
+        Stellar population age passed to the isochrone model.
+    z : float
+        Metallicity passed to the isochrone model.
+    mu : float or array-like
+        Distance modulus(es) used to convert apparent magnitudes to absolute
+        magnitudes. If scalar, applied to all stars.
+    abs_mag_min : float, optional
+        Minimum absolute magnitude cutoff applied to the isochrone. Only
+        isochrone points with M_g > abs_mag_min are used. Default is 2.9.
+    app_mag_max : float, optional
+        Maximum allowed apparent g-band magnitude. Stars fainter than this are
+        assigned zero weight. Default is 23.5.
+
+    Returns
+    -------
+    p : ndarray
+        Array of photometric weights between 0 and 1 representing consistency
+        with the specified isochrone.
+
+    Notes
+    -----
+    - This is not a normalized probability density.
+    - The likelihood is evaluated only in color-space, not full CMD-space.
+    - Stars outside interpolation bounds or failing quality cuts receive p = 0.
+    """
+    mag_g = np.asarray(mag_g, dtype=float)
+    mag_r = np.asarray(mag_r, dtype=float)
+    mu    = np.asarray(mu,    dtype=float)
+    if mu.ndim == 0:
+        mu = np.full_like(mag_g, float(mu))
+
+    color = mag_g - mag_r
+
+    # Pick a reference mu safely within ugali's allowed bounds [10, 30]
+    mu_ref = float(np.clip(np.nanmean(mu), 10.0, 30.0))
+
+    iso = isochrone_factory('marigo2017', survey='DES',
+                            age=age, distance_modulus=mu_ref, z=z)
+
+    gsel = iso.mag > abs_mag_min
+    iso_abs_mag = iso.mag[gsel]
+    iso_color   = iso.color[gsel]
+
+    c_iso_spline = interp1d(iso_abs_mag, iso_color,
+                            bounds_error=False, fill_value=np.nan)
+
+    abs_mag_g = mag_g - mu
+
+    p = np.zeros_like(color)
+
+    c_iso   = c_iso_spline(abs_mag_g)
+    sigma_c = np.sqrt(g_err**2 + r_err**2)
+
+    in_bounds = (
+        (mag_g < app_mag_max) &
+        np.isfinite(c_iso) &
+        np.isfinite(sigma_c) &
+        (sigma_c > 0)
+    )
+    p[in_bounds] = np.exp(
+        -0.5 * ((color[in_bounds] - c_iso[in_bounds]) / sigma_c[in_bounds])**2
+    )
+
+    return p
