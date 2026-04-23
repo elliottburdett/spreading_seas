@@ -395,7 +395,7 @@ def phi2_gaussian(phi2, phi1, widen=None, normalize_peak=True,  stream='AAU'):
     return pdf
 
 def p_photometric(mag_g, mag_r, g_err, r_err, age, z, mu,
-                  abs_mag_min=2.9, app_mag_max=23.5):
+                  abs_mag_min=2.9, app_mag_max=23.5, sigma_i=0.1):
     """
     Compute an isochrone-based photometric membership weight for stars.
 
@@ -439,6 +439,8 @@ def p_photometric(mag_g, mag_r, g_err, r_err, age, z, mu,
     app_mag_max : float, optional
         Maximum allowed apparent g-band magnitude. Stars fainter than this are
         assigned zero weight. Default is 23.5.
+    sigma_i: float
+        Intrinsic dispersion of isochrone in the color dimension.
 
     Returns
     -------
@@ -478,7 +480,7 @@ def p_photometric(mag_g, mag_r, g_err, r_err, age, z, mu,
     p = np.zeros_like(color)
 
     c_iso   = c_iso_spline(abs_mag_g)
-    sigma_c = np.sqrt(g_err**2 + r_err**2)
+    sigma_c = np.sqrt(g_err**2 + r_err**2 + sigma_i**2)
 
     in_bounds = (
         (mag_g < app_mag_max) &
